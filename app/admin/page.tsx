@@ -27,8 +27,8 @@ const categories = [
 ];
 
 const supabase = createBrowserClient(
-  NEXT_PUBLIC_SUPABASE_URL=https://zqnpgjmejaetafgahzlw.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_u18uwF1WOtCI84YtZUt1DA__d6QF-KV
+  process.env.NEXT_PUBLIC_SUPABASE_URL!=zqnpgjmejaetafgahzlw.supabase.co,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_u18uwF1WOtCI84YtZUt1DA__d6QF-KV!
 );
 
 export default function AdminPage() {
