@@ -4,26 +4,10 @@ import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 
 const categories = [
-  {
-    key: "porsi_besar",
-    title: "Porsi Besar",
-    icon: "🍽️",
-  },
-  {
-    key: "porsi_kecil",
-    title: "Porsi Kecil",
-    icon: "🥣",
-  },
-  {
-    key: "ibu_hamil_menyusui",
-    title: "Ibu Hamil & Menyusui",
-    icon: "🤰",
-  },
-  {
-    key: "balita",
-    title: "Balita",
-    icon: "👶",
-  },
+  { key: "porsi_besar", title: "Porsi Besar", icon: "🍽️" },
+  { key: "porsi_kecil", title: "Porsi Kecil", icon: "🥣" },
+  { key: "ibu_hamil_menyusui", title: "Ibu Hamil & Menyusui", icon: "🤰" },
+  { key: "balita", title: "Balita", icon: "👶" },
 ];
 
 const supabase = createBrowserClient(
@@ -32,12 +16,9 @@ const supabase = createBrowserClient(
 );
 
 export default function AdminPage() {
-  const [selectedCategory, setSelectedCategory] =
-    useState("porsi_besar");
-
+  const [selectedCategory, setSelectedCategory] = useState("porsi_besar");
   const [imageUrl, setImageUrl] = useState("");
-  const [selectedFile, setSelectedFile] =
-    useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -47,50 +28,38 @@ export default function AdminPage() {
   );
 
   useEffect(() => {
+    async function loadMenu() {
+      setMessage("");
+      setSelectedFile(null);
+      setPreviewUrl("");
+
+      const { data, error } = await supabase
+        .from("menu_photos")
+        .select("image_url")
+        .eq("category", selectedCategory)
+        .maybeSingle();
+
+      if (error) {
+        console.error("LOAD MENU ERROR:", error);
+        setImageUrl("");
+        setMessage("Gagal mengambil data menu.");
+        return;
+      }
+
+      setImageUrl(data?.image_url || "");
+    }
+
     loadMenu();
   }, [selectedCategory]);
 
-  async function loadMenu() {
-    setMessage("");
-    setSelectedFile(null);
-
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
-    setPreviewUrl("");
-
-    const { data, error } = await supabase
-      .from("menu_photos")
-      .select("image_url")
-      .eq("category", selectedCategory)
-      .maybeSingle();
-
-    if (error) {
-      console.error("LOAD MENU ERROR:", error);
-      setImageUrl("");
-      setMessage("Gagal mengambil data menu.");
-      return;
-    }
-
-    setImageUrl(data?.image_url || "");
-  }
-
-  function handleFileChange(
-    event: React.ChangeEvent<HTMLInputElement>
-  ) {
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     setMessage("");
 
     const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setMessage(
-        "File harus berupa foto JPG, PNG, atau WebP."
-      );
+      setMessage("File harus berupa foto JPG, PNG, atau WebP.");
       event.target.value = "";
       return;
     }
@@ -101,14 +70,10 @@ export default function AdminPage() {
       return;
     }
 
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
-    const localPreview = URL.createObjectURL(file);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
 
     setSelectedFile(file);
-    setPreviewUrl(localPreview);
+    setPreviewUrl(URL.createObjectURL(file));
   }
 
   async function saveMenu() {
@@ -121,145 +86,69 @@ export default function AdminPage() {
     setMessage("");
 
     try {
-      /*
-       * Ambil ekstensi file.
-       * Contoh:
-       * foto.jpg -> jpg
-       * foto.png -> png
-       * foto.webp -> webp
-       */
       const extension =
-        selectedFile.name.split(".").pop()?.toLowerCase() ||
-        "jpg";
+        selectedFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const uniqueName = `${selectedCategory}-${Date.now()}.${extension}`;
 
-      /*
-       * Nama file sederhana tanpa folder.
-       */
-      const uniqueName =
-        selectedCategory +
-        "-" +
-        Date.now() +
-        "." +
-        extension;
-
-      console.log("UPLOAD FILE:", uniqueName);
-      console.log("UPLOAD TYPE:", selectedFile.type);
-      console.log("UPLOAD SIZE:", selectedFile.size);
-
-      /*
-       * Upload ke Supabase Storage.
-       */
-      const { error: uploadError } =
-        await supabase.storage
-          .from("menu-photos")
-          .upload(uniqueName, selectedFile, {
-            cacheControl: "3600",
-            upsert: true,
-            contentType: selectedFile.type,
-          });
+      const { error: uploadError } = await supabase.storage
+        .from("menu-photos")
+        .upload(uniqueName, selectedFile, {
+          cacheControl: "3600",
+          upsert: true,
+          contentType: selectedFile.type,
+        });
 
       if (uploadError) {
-        console.error(
-          "SUPABASE UPLOAD ERROR:",
-          uploadError
-        );
-
-        setMessage(
-          `Gagal upload foto: ${uploadError.message}`
-        );
-
-        setLoading(false);
+        console.error("SUPABASE UPLOAD ERROR:", uploadError);
+        setMessage(`Gagal upload foto: ${uploadError.message}`);
         return;
       }
 
-      /*
-       * Ambil URL publik foto.
-       */
-      const { data: publicUrlData } =
-        supabase.storage
-          .from("menu-photos")
-          .getPublicUrl(uniqueName);
+      const { data: publicUrlData } = supabase.storage
+        .from("menu-photos")
+        .getPublicUrl(uniqueName);
 
-      const publicUrl =
-        publicUrlData.publicUrl;
+      const publicUrl = publicUrlData.publicUrl;
 
-      console.log("PUBLIC URL:", publicUrl);
-
-      /*
-       * Simpan URL foto ke tabel menu_photos.
-       */
-      const { error: updateError } =
-        await supabase
-          .from("menu_photos")
-          .update({
-            image_url: publicUrl,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("category", selectedCategory);
+      const { error: updateError } = await supabase
+        .from("menu_photos")
+        .update({
+          image_url: publicUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("category", selectedCategory);
 
       if (updateError) {
-        console.error(
-          "UPDATE MENU ERROR:",
-          updateError
-        );
-
+        console.error("UPDATE MENU ERROR:", updateError);
         setMessage(
           "Foto berhasil diupload, tetapi gagal menyimpan data menu."
         );
-
-        setLoading(false);
         return;
       }
 
-      /*
-       * Berhasil.
-       */
       setImageUrl(publicUrl);
       setSelectedFile(null);
-
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl("");
-
-      setMessage(
-        "Foto menu berhasil diupload dan disimpan."
-      );
+      setMessage("Foto menu berhasil diupload dan disimpan.");
     } catch (error) {
-      console.error(
-        "UPLOAD UNEXPECTED ERROR:",
-        error
-      );
-
-      setMessage(
-        "Terjadi kesalahan saat mengupload foto."
-      );
+      console.error("UPLOAD ERROR:", error);
+      setMessage("Terjadi kesalahan saat mengupload foto.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   return (
     <main className="admin-page">
       <div className="admin-header">
         <div>
-          <p className="eyebrow">
-            SPPG KELURAHAN JAMBU
-          </p>
-
+          <p className="eyebrow">SPPG KELURAHAN JAMBU</p>
           <h1>Admin Menu</h1>
-
-          <p>
-            Upload foto menu untuk ditampilkan
-            pada halaman publik.
-          </p>
+          <p>Upload foto menu untuk ditampilkan pada halaman publik.</p>
         </div>
 
-        <a
-          href="/"
-          className="back-button"
-        >
+        <a href="/" className="back-button">
           ← Lihat Halaman Menu
         </a>
       </div>
@@ -277,16 +166,9 @@ export default function AdminPage() {
                   ? "category-button active"
                   : "category-button"
               }
-              onClick={() =>
-                setSelectedCategory(
-                  category.key
-                )
-              }
+              onClick={() => setSelectedCategory(category.key)}
             >
-              <span>
-                {category.icon}
-              </span>
-
+              <span>{category.icon}</span>
               {category.title}
             </button>
           ))}
@@ -294,25 +176,14 @@ export default function AdminPage() {
 
         <div className="menu-editor">
           <div className="editor-title">
-            <span className="editor-icon">
-              {currentCategory?.icon}
-            </span>
-
+            <span className="editor-icon">{currentCategory?.icon}</span>
             <div>
-              <h2>
-                {currentCategory?.title}
-              </h2>
-
-              <p>
-                Pilih foto menu langsung
-                dari HP atau komputer.
-              </p>
+              <h2>{currentCategory?.title}</h2>
+              <p>Pilih foto menu langsung dari HP atau komputer.</p>
             </div>
           </div>
 
-          <label htmlFor="menuPhoto">
-            Foto Menu
-          </label>
+          <label htmlFor="menuPhoto">Foto Menu</label>
 
           <input
             id="menuPhoto"
@@ -323,10 +194,7 @@ export default function AdminPage() {
 
           {previewUrl && (
             <div className="image-preview">
-              <img
-                src={previewUrl}
-                alt="Preview foto menu"
-              />
+              <img src={previewUrl} alt="Preview foto menu" />
             </div>
           )}
 
@@ -340,8 +208,7 @@ export default function AdminPage() {
           )}
 
           <p className="upload-info">
-            Format JPG, PNG, atau WebP.
-            Maksimal 10 MB.
+            Format JPG, PNG, atau WebP. Maksimal 10 MB.
           </p>
 
           <div className="editor-actions">
@@ -349,20 +216,12 @@ export default function AdminPage() {
               type="button"
               className="save-button"
               onClick={saveMenu}
-              disabled={
-                loading || !selectedFile
-              }
+              disabled={loading || !selectedFile}
             >
-              {loading
-                ? "Mengupload..."
-                : "⬆️ Upload & Simpan Menu"}
+              {loading ? "Mengupload..." : "⬆️ Upload & Simpan Menu"}
             </button>
 
-            {message && (
-              <span className="save-message">
-                {message}
-              </span>
-            )}
+            {message && <span className="save-message">{message}</span>}
           </div>
         </div>
       </section>
