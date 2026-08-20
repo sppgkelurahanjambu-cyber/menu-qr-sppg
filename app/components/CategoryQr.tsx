@@ -1,21 +1,59 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
+import { createBrowserClient } from "@supabase/ssr";
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+);
 
 export default function CategoryQr({
-  href,
+  category,
   title,
 }: {
-  href: string;
+  category: string;
   title: string;
 }) {
-  const url = typeof window !== "undefined" ? `${window.location.origin}${href}` : href;
+  const [photoUrl, setPhotoUrl] = useState("");
+
+  useEffect(() => {
+    async function loadPhotoUrl() {
+      const { data, error } = await supabase
+        .from("menu_photos")
+        .select("image_url")
+        .eq("category", category)
+        .maybeSingle();
+
+      if (error) {
+        console.error("QR PHOTO ERROR:", error);
+        return;
+      }
+
+      setPhotoUrl(data?.image_url || "");
+    }
+
+    loadPhotoUrl();
+  }, [category]);
+
+  if (!photoUrl) {
+    return (
+      <div className="qrCard">
+        <div className="qrCanvasWrap qrUnavailable">
+          <span>Foto belum tersedia</span>
+        </div>
+        <h3>{title}</h3>
+        <p>Upload foto melalui Admin</p>
+      </div>
+    );
+  }
 
   return (
     <div className="qrCard">
       <div className="qrCanvasWrap">
         <QRCodeCanvas
-          value={url}
+          value={photoUrl}
           size={190}
           level="H"
           includeMargin
@@ -29,7 +67,7 @@ export default function CategoryQr({
         />
       </div>
       <h3>{title}</h3>
-      <p>Scan untuk membuka menu</p>
+      <p>Scan untuk langsung membuka foto menu</p>
     </div>
   );
 }
