@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CategoryQr from "./components/CategoryQr";
 
 const categories = [
   {
@@ -33,39 +34,45 @@ export default function HomePage() {
       <div className="container">
         <header className="header">
           <div className="logoBox">
-            <img
-              src="/logo-bgn.png"
-              alt="Logo Badan Gizi Nasional"
-              className="logo"
-            />
+            <img src="/logo-bgn.png" alt="Logo BGN" className="logo" />
           </div>
-
-          <div>
-            <p className="eyebrow">SPPG Kelurahan Jambu</p>
+          <div className="brandText">
+            <p className="eyebrow">SPPG SEMARANG JAMBU JAMBU 02</p>
             <h1>Menu Hari Ini</h1>
-            <p className="subtitle">
-              Pilih kategori penerima manfaat untuk melihat menu hari ini.
-            </p>
+            <p className="subtitle">Pilih kategori untuk melihat menu.</p>
           </div>
         </header>
 
-        <section className="cards">
+        <section className="cards" aria-label="Kategori menu">
           {categories.map((category) => (
             <Link key={category.href} href={category.href} className="card">
-              <div className="icon">{category.icon}</div>
+              <div className="icon" aria-hidden="true">{category.icon}</div>
               <div className="cardContent">
                 <h2>{category.title}</h2>
                 <p>{category.description}</p>
               </div>
-              <div className="arrow">→</div>
+              <div className="arrow" aria-hidden="true">→</div>
             </Link>
           ))}
         </section>
 
+        <section className="qrSection" aria-label="QR Menu per kategori">
+          <div className="sectionHeading">
+            <p className="eyebrow">AKSES CEPAT</p>
+            <h2>QR Menu per Kategori</h2>
+            <p>Scan QR untuk langsung membuka menu kategori yang dipilih.</p>
+          </div>
+
+          <div className="qrGrid">
+            {categories.map((category) => (
+              <CategoryQr key={category.href} href={category.href} title={category.title} />
+            ))}
+          </div>
+        </section>
+
         <footer>
-          <Link href="/admin" className="adminLink">
-            Admin
-          </Link>
+          <p>SPPG SEMARANG JAMBU JAMBU 02</p>
+          <Link href="/admin" className="adminLink">Admin</Link>
         </footer>
       </div>
     </main>
