@@ -1,4 +1,3 @@
-```tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -123,23 +122,41 @@ export default function AdminPage() {
 
     try {
       /*
-       * Gunakan nama file yang sangat sederhana.
-       * Tidak menggunakan nama asli file.
-       * Tidak menggunakan folder.
+       * Ambil ekstensi file.
+       * Contoh:
+       * foto.jpg -> jpg
+       * foto.png -> png
+       * foto.webp -> webp
+       */
+      const extension =
+        selectedFile.name.split(".").pop()?.toLowerCase() ||
+        "jpg";
+
+      /*
+       * Nama file sederhana tanpa folder.
        */
       const uniqueName =
-  selectedCategory + "-" + Date.now() + "." + extension;
+        selectedCategory +
+        "-" +
+        Date.now() +
+        "." +
+        extension;
+
       console.log("UPLOAD FILE:", uniqueName);
       console.log("UPLOAD TYPE:", selectedFile.type);
       console.log("UPLOAD SIZE:", selectedFile.size);
 
-      const { error: uploadError } = await supabase.storage
-  .from("menu-photos")
-  .upload(uniqueName, selectedFile, {
-    cacheControl: "3600",
-    upsert: true,
-    contentType: selectedFile.type,
-  });
+      /*
+       * Upload ke Supabase Storage.
+       */
+      const { error: uploadError } =
+        await supabase.storage
+          .from("menu-photos")
+          .upload(uniqueName, selectedFile, {
+            cacheControl: "3600",
+            upsert: true,
+            contentType: selectedFile.type,
+          });
 
       if (uploadError) {
         console.error(
@@ -155,52 +172,24 @@ export default function AdminPage() {
         return;
       }
 
-      const { data: publicData } =
+      /*
+       * Ambil URL publik foto.
+       */
+      const { data: publicUrlData } =
         supabase.storage
           .from("menu-photos")
           .getPublicUrl(uniqueName);
 
-      const publicUrl = publicData.publicUrl;
-
-      if (!publicUrl) {
-        setMessage(
-          "Foto berhasil diupload tetapi URL foto tidak ditemukan."
-        );
-
-        setLoading(false);
-        return;
-      }
+      const publicUrl =
+        publicUrlData.publicUrl;
 
       console.log("PUBLIC URL:", publicUrl);
 
       /*
-       * Simpan URL hasil upload ke tabel menu_photos.
+       * Simpan URL foto ke tabel menu_photos.
        */
-      const { data: existingMenu, error: findError } =
+      const { error: updateError } =
         await supabase
-          .from("menu_photos")
-          .select("category")
-          .eq("category", selectedCategory)
-          .maybeSingle();
-
-      if (findError) {
-        console.error(
-          "FIND MENU ERROR:",
-          findError
-        );
-
-        setMessage(
-          `Foto berhasil diupload, tetapi gagal membaca data menu: ${findError.message}`
-        );
-
-        setLoading(false);
-        return;
-      }
-
-      let databaseError = null;
-
-      if (existingMenu) {
-        const result = await supabase
           .from("menu_photos")
           .update({
             image_url: publicUrl,
@@ -208,33 +197,23 @@ export default function AdminPage() {
           })
           .eq("category", selectedCategory);
 
-        databaseError = result.error;
-      } else {
-        const result = await supabase
-          .from("menu_photos")
-          .insert({
-            category: selectedCategory,
-            image_url: publicUrl,
-            updated_at: new Date().toISOString(),
-          });
-
-        databaseError = result.error;
-      }
-
-      if (databaseError) {
+      if (updateError) {
         console.error(
-          "DATABASE ERROR:",
-          databaseError
+          "UPDATE MENU ERROR:",
+          updateError
         );
 
         setMessage(
-          `Foto berhasil diupload, tetapi gagal menyimpan data menu: ${databaseError.message}`
+          "Foto berhasil diupload, tetapi gagal menyimpan data menu."
         );
 
         setLoading(false);
         return;
       }
 
+      /*
+       * Berhasil.
+       */
       setImageUrl(publicUrl);
       setSelectedFile(null);
 
@@ -245,20 +224,17 @@ export default function AdminPage() {
       setPreviewUrl("");
 
       setMessage(
-        "✅ Foto menu berhasil diupload dan disimpan."
+        "Foto menu berhasil diupload dan disimpan."
       );
     } catch (error) {
-      console.error("UPLOAD EXCEPTION:", error);
+      console.error(
+        "UPLOAD UNEXPECTED ERROR:",
+        error
+      );
 
-      if (error instanceof Error) {
-        setMessage(
-          `Terjadi kesalahan: ${error.message}`
-        );
-      } else {
-        setMessage(
-          "Terjadi kesalahan saat mengupload foto."
-        );
-      }
+      setMessage(
+        "Terjadi kesalahan saat mengupload foto."
+      );
     }
 
     setLoading(false);
@@ -275,7 +251,8 @@ export default function AdminPage() {
           <h1>Admin Menu</h1>
 
           <p>
-            Upload foto menu langsung dari HP atau komputer.
+            Upload foto menu untuk ditampilkan
+            pada halaman publik.
           </p>
         </div>
 
@@ -300,11 +277,16 @@ export default function AdminPage() {
                   ? "category-button active"
                   : "category-button"
               }
-              onClick={() => {
-                setSelectedCategory(category.key);
-              }}
+              onClick={() =>
+                setSelectedCategory(
+                  category.key
+                )
+              }
             >
-              <span>{category.icon}</span>
+              <span>
+                {category.icon}
+              </span>
+
               {category.title}
             </button>
           ))}
@@ -322,13 +304,14 @@ export default function AdminPage() {
               </h2>
 
               <p>
-                Upload foto menu dari HP atau komputer.
+                Pilih foto menu langsung
+                dari HP atau komputer.
               </p>
             </div>
           </div>
 
           <label htmlFor="menuPhoto">
-            Pilih Foto Menu
+            Foto Menu
           </label>
 
           <input
@@ -336,15 +319,7 @@ export default function AdminPage() {
             type="file"
             accept="image/jpeg,image/png,image/webp"
             onChange={handleFileChange}
-            disabled={loading}
           />
-
-          {selectedFile && (
-            <p className="upload-info">
-              File dipilih:{" "}
-              <strong>{selectedFile.name}</strong>
-            </p>
-          )}
 
           {previewUrl && (
             <div className="image-preview">
@@ -364,19 +339,9 @@ export default function AdminPage() {
             </div>
           )}
 
-          {!selectedFile &&
-            !previewUrl &&
-            !imageUrl && (
-              <div className="upload-empty">
-                📷
-                <p>
-                  Belum ada foto menu.
-                </p>
-              </div>
-            )}
-
           <p className="upload-info">
-            JPG, PNG, atau WebP • Maksimal 10 MB
+            Format JPG, PNG, atau WebP.
+            Maksimal 10 MB.
           </p>
 
           <div className="editor-actions">
@@ -389,25 +354,18 @@ export default function AdminPage() {
               }
             >
               {loading
-                ? "⏳ Mengupload..."
+                ? "Mengupload..."
                 : "⬆️ Upload & Simpan Menu"}
             </button>
-          </div>
 
-          {message && (
-            <div
-              className={
-                message.startsWith("✅")
-                  ? "save-message success"
-                  : "save-message error"
-              }
-            >
-              {message}
-            </div>
-          )}
+            {message && (
+              <span className="save-message">
+                {message}
+              </span>
+            )}
+          </div>
         </div>
       </section>
     </main>
   );
 }
-```
