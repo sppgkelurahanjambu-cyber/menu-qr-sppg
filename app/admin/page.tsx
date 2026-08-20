@@ -12,6 +12,21 @@ const categories = [
 
 const supabase = createClient();
 
+function getStoragePathFromPublicUrl(url: string) {
+  const marker = "/storage/v1/object/public/menu-photos/";
+  const markerIndex = url.indexOf(marker);
+
+  if (markerIndex === -1) return "";
+
+  const path = url.slice(markerIndex + marker.length).split("?")[0];
+
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+}
+
 export default function AdminPage() {
   const [selectedCategory, setSelectedCategory] = useState("porsi_besar");
   const [imageUrl, setImageUrl] = useState("");
@@ -89,8 +104,15 @@ export default function AdminPage() {
     setLoading(true);
     setMessage("Mengupload foto...");
 
+    const oldImageUrl = imageUrl;
+
     try {
-      const extension = selectedFile.type === "image/png" ? "png" : selectedFile.type === "image/webp" ? "webp" : "jpg";
+      const extension =
+        selectedFile.type === "image/png"
+          ? "png"
+          : selectedFile.type === "image/webp"
+            ? "webp"
+            : "jpg";
       const filePath = `${selectedCategory}-${Date.now()}.${extension}`;
 
       const { error: uploadError } = await supabase.storage
@@ -119,18 +141,52 @@ export default function AdminPage() {
 
       if (updateError) {
         console.error("MENU UPDATE ERROR", updateError);
-        setMessage(`Foto terupload, tetapi menu gagal disimpan: ${updateError.message}`);
+
+        // Jangan tinggalkan file baru jika database gagal menunjuk ke file tersebut.
+        await supabase.storage.from("menu-photos").remove([filePath]);
+
+        setMessage(`Foto gagal disimpan: ${updateError.message}`);
         return;
       }
 
+      // QR tetap sama karena QR mengarah ke halaman kategori.
+      // Yang berubah hanya foto yang ditampilkan halaman tersebut.
       setImageUrl(publicUrl);
+
+      // Hapus file lama setelah database sudah menunjuk ke foto baru.
+      if (oldImageUrl && oldImageUrl !== publicUrl) {
+        const oldFilePath = getStoragePathFromPublicUrl(oldImageUrl);
+
+        if (oldFilePath && oldFilePath !== filePath) {
+          const { error: deleteError } = await supabase.storage
+            .from("menu-photos")
+            .remove([oldFilePath]);
+
+          if (deleteError) {
+            console.error("OLD PHOTO DELETE ERROR", deleteError);
+            setMessage(
+              "Foto baru berhasil disimpan, tetapi foto lama belum dapat dihapus."
+            );
+          } else {
+            setMessage("Foto baru berhasil disimpan dan foto lama terhapus.");
+          }
+        } else {
+          setMessage("Foto baru berhasil disimpan.");
+        }
+      } else {
+        setMessage("Foto menu berhasil disimpan.");
+      }
+
       setSelectedFile(null);
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl("");
-      setMessage("Foto menu berhasil disimpan.");
     } catch (error) {
       console.error("UPLOAD ERROR", error);
-      setMessage(`Upload gagal: ${error instanceof Error ? error.message : "Kesalahan tidak diketahui"}`);
+      setMessage(
+        `Upload gagal: ${
+          error instanceof Error ? error.message : "Kesalahan tidak diketahui"
+        }`
+      );
     } finally {
       setLoading(false);
     }
@@ -159,7 +215,12 @@ export default function AdminPage() {
         <h2>Pilih Kategori</h2>
         <div className="category-buttons">
           {categories.map((category) => (
-            <button key={category.key} type="button" className={selectedCategory === category.key ? "category-button active" : "category-button"} onClick={() => setSelectedCategory(category.key)}>
+            <button
+              key={category.key}
+              type="button"
+              className={selectedCategory === category.key ? "category-button active" : "category-button"}
+              onClick={() => setSelectedCategory(category.key)}
+            >
               <span>{category.icon}</span>{category.title}
             </button>
           ))}
