@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
+import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 const categories = [
   { key: "porsi_besar", title: "Porsi Besar", icon: "🍽️" },
@@ -10,10 +10,7 @@ const categories = [
   { key: "balita", title: "Balita", icon: "👶" },
 ];
 
-const SUPABASE_URL = "https://zqnpgjmejaetafgahzlw.supabase.co";
-const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
-
-const supabase = createBrowserClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient();
 
 export default function AdminPage() {
   const [selectedCategory, setSelectedCategory] = useState("porsi_besar");
@@ -22,6 +19,8 @@ export default function AdminPage() {
   const [previewUrl, setPreviewUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const currentCategory = categories.find((c) => c.key === selectedCategory);
 
@@ -31,6 +30,8 @@ export default function AdminPage() {
     async function loadMenu() {
       setMessage("");
       setSelectedFile(null);
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setPreviewUrl("");
 
       const { data, error } = await supabase
         .from("menu_photos")
@@ -48,19 +49,17 @@ export default function AdminPage() {
       }
 
       setImageUrl(data?.image_url || "");
-      setPreviewUrl("");
     }
 
     loadMenu();
-
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     setMessage("");
-
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -77,7 +76,6 @@ export default function AdminPage() {
     }
 
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
   }
@@ -85,11 +83,6 @@ export default function AdminPage() {
   async function saveMenu() {
     if (!selectedFile) {
       setMessage("Silakan pilih foto terlebih dahulu.");
-      return;
-    }
-
-    if (!SUPABASE_KEY) {
-      setMessage("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY belum tersedia di Vercel.");
       return;
     }
 
@@ -103,43 +96,26 @@ export default function AdminPage() {
           : selectedFile.type === "image/webp"
             ? "webp"
             : "jpg";
-
-      // Hanya nama file relatif di dalam bucket. Tidak ada slash di awal.
       const filePath = `${selectedCategory}-${Date.now()}.${extension}`;
 
-      // Upload langsung ke REST Storage API. Ini menghindari masalah
-      // pembentukan URL path pada Storage client.
-      const uploadUrl = `${SUPABASE_URL}/storage/v1/object/menu-photos/${encodeURIComponent(filePath)}`;
+      const { error: uploadError } = await supabase.storage
+        .from("menu-photos")
+        .upload(filePath, selectedFile, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: selectedFile.type,
+        });
 
-      const uploadResponse = await fetch(uploadUrl, {
-        method: "POST",
-        headers: {
-          apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": selectedFile.type,
-          "x-upsert": "true",
-          "cache-control": "3600",
-        },
-        body: selectedFile,
-      });
-
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        console.error("STORAGE REST ERROR", uploadResponse.status, errorText);
-
-        let detail = errorText;
-        try {
-          const parsed = JSON.parse(errorText);
-          detail = parsed.message || parsed.error || errorText;
-        } catch {
-          // Keep plain response text.
-        }
-
-        setMessage(`Gagal upload foto (${uploadResponse.status}): ${detail}`);
+      if (uploadError) {
+        console.error("STORAGE UPLOAD ERROR", uploadError);
+        setMessage(`Gagal upload foto: ${uploadError.message}`);
         return;
       }
 
-      const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/menu-photos/${encodeURIComponent(filePath)}`;
+      const { data: publicUrlData } = supabase.storage
+        .from("menu-photos")
+        .getPublicUrl(filePath);
+      const publicUrl = publicUrlData.publicUrl;
 
       const { error: updateError } = await supabase
         .from("menu_photos")
@@ -151,54 +127,50 @@ export default function AdminPage() {
 
       if (updateError) {
         console.error("MENU UPDATE ERROR", updateError);
-        setMessage(
-          `Foto berhasil diupload, tetapi data menu gagal disimpan: ${updateError.message}`
-        );
+        setMessage(`Foto terupload, tetapi menu gagal disimpan: ${updateError.message}`);
         return;
       }
 
       setImageUrl(publicUrl);
       setSelectedFile(null);
-
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl("");
-      setMessage("Foto menu berhasil diupload dan disimpan.");
+      setMessage("Foto menu berhasil disimpan.");
     } catch (error) {
       console.error("UPLOAD ERROR", error);
-      setMessage(
-        `Upload gagal: ${error instanceof Error ? error.message : "Kesalahan tidak diketahui"}`
-      );
+      setMessage(`Upload gagal: ${error instanceof Error ? error.message : "Kesalahan tidak diketahui"}`);
     } finally {
       setLoading(false);
     }
+  }
+
+  async function logout() {
+    await supabase.auth.signOut();
+    window.location.href = "/admin/login";
   }
 
   return (
     <main className="admin-page">
       <div className="admin-header">
         <div>
-          <p className="eyebrow">SPPG KELURAHAN JAMBU</p>
+          <p className="eyebrow">SPPG SEMARANG JAMBU JAMBU 02</p>
           <h1>Admin Menu</h1>
-          <p>Upload foto menu untuk ditampilkan pada halaman publik.</p>
+          <p>Kelola foto menu langsung dari HP atau komputer.</p>
         </div>
-        <a href="/" className="back-button">
-          ← Lihat Halaman Menu
-        </a>
+        <div className="admin-header-actions">
+          <a href="/" className="back-button">← Halaman Publik</a>
+          <button type="button" className="logout-button" onClick={logout}>Keluar</button>
+        </div>
       </div>
 
       <section className="admin-panel">
         <h2>Pilih Kategori</h2>
-
         <div className="category-buttons">
           {categories.map((category) => (
             <button
               key={category.key}
               type="button"
-              className={
-                selectedCategory === category.key
-                  ? "category-button active"
-                  : "category-button"
-              }
+              className={selectedCategory === category.key ? "category-button active" : "category-button"}
               onClick={() => setSelectedCategory(category.key)}
             >
               <span>{category.icon}</span>
@@ -212,33 +184,60 @@ export default function AdminPage() {
             <span className="editor-icon">{currentCategory?.icon}</span>
             <div>
               <h2>{currentCategory?.title}</h2>
-              <p>Pilih foto menu langsung dari HP atau komputer.</p>
+              <p>Upload foto menu baru dari HP.</p>
             </div>
           </div>
 
-          <label htmlFor="menuPhoto">Foto Menu</label>
+          <div className="mobile-upload-buttons">
+            <button
+              type="button"
+              className="upload-choice camera"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={loading}
+            >
+              📷 Ambil Foto dengan Kamera
+            </button>
+            <button
+              type="button"
+              className="upload-choice gallery"
+              onClick={() => galleryInputRef.current?.click()}
+              disabled={loading}
+            >
+              🖼️ Pilih dari Galeri
+            </button>
+          </div>
+
           <input
-            id="menuPhoto"
+            ref={cameraInputRef}
+            className="hidden-file-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            capture="environment"
+            onChange={handleFileChange}
+          />
+          <input
+            ref={galleryInputRef}
+            className="hidden-file-input"
             type="file"
             accept="image/jpeg,image/png,image/webp"
             onChange={handleFileChange}
           />
 
-          {previewUrl && (
-            <div className="image-preview">
-              <img src={previewUrl} alt="Preview foto menu" />
-            </div>
-          )}
+          {selectedFile && <p className="selected-file">Foto dipilih: <strong>{selectedFile.name}</strong></p>}
 
-          {!previewUrl && imageUrl && (
+          {previewUrl ? (
+            <div className="image-preview">
+              <img src={previewUrl} alt="Preview foto menu baru" />
+            </div>
+          ) : imageUrl ? (
             <div className="image-preview">
               <img src={imageUrl} alt={`Foto ${currentCategory?.title}`} />
             </div>
+          ) : (
+            <div className="empty-photo">Belum ada foto menu untuk kategori ini.</div>
           )}
 
-          <p className="upload-info">
-            Format JPG, PNG, atau WebP. Maksimal 10 MB.
-          </p>
+          <p className="upload-info">JPG, PNG, atau WebP • maksimal 10 MB</p>
 
           <div className="editor-actions">
             <button
@@ -249,7 +248,6 @@ export default function AdminPage() {
             >
               {loading ? "Mengupload..." : "⬆️ Upload & Simpan Menu"}
             </button>
-
             {message && <span className="save-message">{message}</span>}
           </div>
         </div>
