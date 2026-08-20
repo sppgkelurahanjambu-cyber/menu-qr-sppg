@@ -1,191 +1,299 @@
-"use client";
+* {
+  box-sizing: border-box;
+}
 
-import { useEffect, useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
 
-const categories = [
-  {
-    key: "porsi_besar",
-    title: "Porsi Besar",
-    icon: "🍽️",
-  },
-  {
-    key: "porsi_kecil",
-    title: "Porsi Kecil",
-    icon: "🥣",
-  },
-  {
-    key: "ibu_hamil_menyusui",
-    title: "Ibu Hamil & Menyusui",
-    icon: "🤰",
-  },
-  {
-    key: "balita",
-    title: "Balita",
-    icon: "👶",
-  },
-];
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f3f8f6;
+  color: #092b5a;
+}
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
+/* =========================
+   ADMIN PAGE
+========================= */
 
-export default function AdminPage() {
-  const [selectedCategory, setSelectedCategory] =
-    useState("porsi_besar");
+.admin-page {
+  min-height: 100vh;
+  padding: 40px 20px 60px;
+  background: #f3f8f6;
+}
 
-  const [imageUrl, setImageUrl] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+.admin-header {
+  max-width: 1100px;
+  margin: 0 auto 30px;
+  padding: 30px;
+  background: white;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
 
-  useEffect(() => {
-    loadMenu();
-  }, [selectedCategory]);
+.eyebrow {
+  margin: 0 0 8px;
+  color: #008f5a;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  font-size: 14px;
+}
 
-  async function loadMenu() {
-    setMessage("");
+.admin-header h1 {
+  margin: 0;
+  font-size: 42px;
+  color: #092b5a;
+}
 
-    const { data, error } = await supabase
-      .from("menu_photos")
-      .select("image_url")
-      .eq("category", selectedCategory)
-      .single();
+.admin-header p:not(.eyebrow) {
+  margin: 10px 0 0;
+  color: #667085;
+  font-size: 17px;
+}
 
-    if (error) {
-      console.error(error);
-      setImageUrl("");
-      return;
-    }
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: #092b5a;
+  color: white;
+  text-decoration: none;
+  font-weight: 700;
+  white-space: nowrap;
+}
 
-    setImageUrl(data?.image_url || "");
+.back-button:hover {
+  background: #008f5a;
+}
+
+/* =========================
+   ADMIN PANEL
+========================= */
+
+.admin-panel {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 30px;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.admin-panel > h2 {
+  margin-top: 0;
+  color: #092b5a;
+}
+
+/* =========================
+   CATEGORY BUTTONS
+========================= */
+
+.category-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 30px;
+}
+
+.category-button {
+  border: 2px solid #e5eee9;
+  background: #f8fbfa;
+  color: #092b5a;
+  border-radius: 16px;
+  padding: 18px 12px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  transition: 0.2s ease;
+}
+
+.category-button span {
+  display: block;
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.category-button:hover {
+  border-color: #008f5a;
+  transform: translateY(-2px);
+}
+
+.category-button.active {
+  background: #eaf8f1;
+  border-color: #008f5a;
+}
+
+/* =========================
+   MENU EDITOR
+========================= */
+
+.menu-editor {
+  padding: 30px;
+  border: 1px solid #e5eee9;
+  border-radius: 20px;
+  background: #fbfdfc;
+}
+
+.editor-title {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.editor-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: #eaf8f1;
+  font-size: 34px;
+}
+
+.editor-title h2 {
+  margin: 0;
+  color: #092b5a;
+}
+
+.editor-title p {
+  margin: 5px 0 0;
+  color: #667085;
+}
+
+/* =========================
+   INPUT
+========================= */
+
+.menu-editor label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: #092b5a;
+}
+
+.menu-editor input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #d7e2dc;
+  border-radius: 12px;
+  font-size: 16px;
+  outline: none;
+  background: white;
+}
+
+.menu-editor input:focus {
+  border-color: #008f5a;
+  box-shadow: 0 0 0 3px rgba(0, 143, 90, 0.1);
+}
+
+/* =========================
+   IMAGE PREVIEW
+========================= */
+
+.image-preview {
+  margin-top: 24px;
+  width: 100%;
+  max-width: 700px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #eef3f0;
+  border: 1px solid #e0e8e3;
+}
+
+.image-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 500px;
+  object-fit: contain;
+}
+
+/* =========================
+   ACTION
+========================= */
+
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 24px;
+}
+
+.save-button {
+  border: none;
+  border-radius: 12px;
+  padding: 14px 24px;
+  background: #008f5a;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.save-button:hover {
+  background: #00764a;
+}
+
+.save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.save-message {
+  color: #008f5a;
+  font-weight: 700;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 800px) {
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  async function saveMenu() {
-    setLoading(true);
-    setMessage("");
-
-    const { error } = await supabase
-      .from("menu_photos")
-      .update({
-        image_url: imageUrl || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("category", selectedCategory);
-
-    setLoading(false);
-
-    if (error) {
-      console.error(error);
-      setMessage("Gagal menyimpan menu.");
-      return;
-    }
-
-    setMessage("Menu berhasil disimpan.");
+  .category-buttons {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  const currentCategory = categories.find(
-    (category) => category.key === selectedCategory
-  );
+  .admin-header h1 {
+    font-size: 34px;
+  }
+}
 
-  return (
-    <main className="admin-page">
-      <div className="admin-header">
-        <div>
-          <p className="eyebrow">SPPG KELURAHAN JAMBU</p>
+@media (max-width: 500px) {
+  .admin-page {
+    padding: 20px 12px 40px;
+  }
 
-          <h1>Admin Menu</h1>
+  .admin-header,
+  .admin-panel {
+    padding: 20px;
+    border-radius: 18px;
+  }
 
-          <p>
-            Kelola foto menu yang tampil pada halaman publik.
-          </p>
-        </div>
+  .category-buttons {
+    grid-template-columns: 1fr;
+  }
 
-        <a href="/" className="back-button">
-          ← Lihat Halaman Menu
-        </a>
-      </div>
+  .editor-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
 
-      <section className="admin-panel">
-        <h2>Pilih Kategori</h2>
-
-        <div className="category-buttons">
-          {categories.map((category) => (
-            <button
-              key={category.key}
-              type="button"
-              className={
-                selectedCategory === category.key
-                  ? "category-button active"
-                  : "category-button"
-              }
-              onClick={() =>
-                setSelectedCategory(category.key)
-              }
-            >
-              <span>{category.icon}</span>
-              {category.title}
-            </button>
-          ))}
-        </div>
-
-        <div className="menu-editor">
-          <div className="editor-title">
-            <span className="editor-icon">
-              {currentCategory?.icon}
-            </span>
-
-            <div>
-              <h2>{currentCategory?.title}</h2>
-              <p>
-                Atur foto menu untuk kategori ini.
-              </p>
-            </div>
-          </div>
-
-          <label htmlFor="imageUrl">
-            URL Foto Menu
-          </label>
-
-          <input
-            id="imageUrl"
-            type="url"
-            value={imageUrl}
-            onChange={(event) =>
-              setImageUrl(event.target.value)
-            }
-            placeholder="https://contoh.com/foto-menu.jpg"
-          />
-
-          {imageUrl && (
-            <div className="image-preview">
-              <img
-                src={imageUrl}
-                alt={`Foto ${currentCategory?.title}`}
-              />
-            </div>
-          )}
-
-          <div className="editor-actions">
-            <button
-              type="button"
-              className="save-button"
-              onClick={saveMenu}
-              disabled={loading}
-            >
-              {loading
-                ? "Menyimpan..."
-                : "Simpan Menu"}
-            </button>
-
-            {message && (
-              <span className="save-message">
-                {message}
-              </span>
-            )}
-          </div>
-        </div>
-      </section>
-    </main>
-  );
+  .save-button {
+    width: 100%;
+  }
 }
