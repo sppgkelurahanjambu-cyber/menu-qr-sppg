@@ -27,7 +27,7 @@ const categories = [
 ];
 
 const supabase = createBrowserClient(
-  process.env.zqnpgjmejaetafgahzlw.supabase.co/rest/v1/
+  process.env.zqnpgjmejaetafgahzlw.supabase.co
   process.env.sb_publishable_u18uwF1WOtCI84YtZUt1DA__d6QF-KV
 );
 
