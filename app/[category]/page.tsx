@@ -1,82 +1,139 @@
-import Link from "next/link";
+"use client";
 
-const categories = [
-  {
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { createBrowserClient } from "@supabase/ssr";
+
+const categories = {
+  "porsi-besar": {
+    key: "porsi_besar",
     title: "Porsi Besar",
-    description: "Menu untuk penerima manfaat porsi besar",
-    href: "/porsi-besar",
     icon: "🍽️",
   },
-  {
+  "porsi-kecil": {
+    key: "porsi_kecil",
     title: "Porsi Kecil",
-    description: "Menu untuk penerima manfaat porsi kecil",
-    href: "/porsi-kecil",
     icon: "🥣",
   },
-  {
+  "ibu-hamil-menyusui": {
+    key: "ibu_hamil_menyusui",
     title: "Ibu Hamil & Menyusui",
-    description: "Menu khusus ibu hamil dan menyusui",
-    href: "/ibu-hamil-menyusui",
     icon: "🤰",
   },
-  {
+  balita: {
+    key: "balita",
     title: "Balita",
-    description: "Menu sehat untuk balita",
-    href: "/balita",
     icon: "👶",
   },
-];
+} as const;
 
-export default function Home() {
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+);
+
+export default function CategoryPage({
+  params,
+}: {
+  params: { category: string };
+}) {
+  const category = categories[params.category as keyof typeof categories];
+  const [imageUrl, setImageUrl] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (!category) {
+      setLoading(false);
+      return;
+    }
+
+    async function loadMenu() {
+      setLoading(true);
+      setMessage("");
+
+      const { data, error } = await supabase
+        .from("menu_photos")
+        .select("image_url")
+        .eq("category", category.key)
+        .maybeSingle();
+
+      if (error) {
+        console.error("PUBLIC MENU ERROR:", error);
+        setImageUrl("");
+        setMessage("Menu belum dapat dimuat.");
+      } else {
+        setImageUrl(data?.image_url || "");
+        if (!data?.image_url) {
+          setMessage("Foto menu untuk kategori ini belum tersedia.");
+        }
+      }
+
+      setLoading(false);
+    }
+
+    loadMenu();
+  }, [category]);
+
+  if (!category) {
+    return (
+      <main className="home">
+        <div className="container">
+          <h1>Kategori tidak ditemukan</h1>
+          <Link href="/">← Kembali ke Menu Hari Ini</Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="home">
       <div className="container">
-
         <header className="header">
           <div className="logoBox">
             <img
-  src="/logo-bgn.png"
-  alt="Logo Badan Gizi Nasional"
-  className="logo"
-/>
+              src="/logo-bgn.png"
+              alt="Logo Badan Gizi Nasional"
+              className="logo"
+            />
           </div>
 
           <div>
             <p className="eyebrow">SPPG Kelurahan Jambu</p>
-            <h1>Menu Hari Ini</h1>
-            <p className="subtitle">
-              Pilih kategori penerima manfaat untuk melihat menu hari ini.
-            </p>
+            <h1>
+              {category.icon} {category.title}
+            </h1>
+            <p className="subtitle">Menu hari ini</p>
           </div>
         </header>
 
-        <section className="cards">
-          {categories.map((category) => (
-            <Link
-              key={category.href}
-              href={category.href}
-              className="card"
-            >
-              <div className="icon">
-                {category.icon}
-              </div>
+        <section className="menu-editor">
+          <div className="editor-title">
+            <span className="editor-icon">{category.icon}</span>
+            <div>
+              <h2>{category.title}</h2>
+              <p>Foto menu yang telah diupload oleh admin.</p>
+            </div>
+          </div>
 
-              <div className="cardContent">
-                <h2>{category.title}</h2>
-                <p>{category.description}</p>
-              </div>
+          {loading && <p>Memuat menu...</p>}
 
-              <div className="arrow">→</div>
+          {!loading && imageUrl && (
+            <div className="image-preview">
+              <img src={imageUrl} alt={`Menu ${category.title}`} />
+            </div>
+          )}
+
+          {!loading && !imageUrl && message && (
+            <p className="save-message">{message}</p>
+          )}
+
+          <div className="editor-actions">
+            <Link href="/" className="back-button">
+              ← Pilih Kategori Lain
             </Link>
-          ))}
+          </div>
         </section>
-
-        <footer>
-          <Link href="/admin" className="adminLink">
-            Admin
-          </Link>
-        </footer>
-
       </div>
     </main>
   );
