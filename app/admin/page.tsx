@@ -1,3 +1,4 @@
+```tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -38,10 +39,13 @@ export default function AdminPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [selectedFile, setSelectedFile] =
     useState<File | null>(null);
-
   const [previewUrl, setPreviewUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  const currentCategory = categories.find(
+    (category) => category.key === selectedCategory
+  );
 
   useEffect(() => {
     loadMenu();
@@ -50,6 +54,11 @@ export default function AdminPage() {
   async function loadMenu() {
     setMessage("");
     setSelectedFile(null);
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
     setPreviewUrl("");
 
     const { data, error } = await supabase
@@ -59,8 +68,9 @@ export default function AdminPage() {
       .maybeSingle();
 
     if (error) {
-      console.error(error);
+      console.error("LOAD MENU ERROR:", error);
       setImageUrl("");
+      setMessage("Gagal mengambil data menu.");
       return;
     }
 
@@ -70,28 +80,41 @@ export default function AdminPage() {
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>
   ) {
+    setMessage("");
+
     const file = event.target.files?.[0];
 
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     if (!file.type.startsWith("image/")) {
-      setMessage("File harus berupa gambar.");
+      setMessage(
+        "File harus berupa foto JPG, PNG, atau WebP."
+      );
+      event.target.value = "";
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
       setMessage("Ukuran foto maksimal 10 MB.");
+      event.target.value = "";
       return;
     }
 
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    const localPreview = URL.createObjectURL(file);
+
     setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-    setMessage("");
+    setPreviewUrl(localPreview);
   }
 
   async function saveMenu() {
     if (!selectedFile) {
-      setMessage("Silakan pilih foto menu terlebih dahulu.");
+      setMessage("Silakan pilih foto terlebih dahulu.");
       return;
     }
 
@@ -99,42 +122,95 @@ export default function AdminPage() {
     setMessage("");
 
     try {
+      /*
+       * Gunakan nama file yang sangat sederhana.
+       * Tidak menggunakan nama asli file.
+       * Tidak menggunakan folder.
+       */
       const extension =
-        selectedFile.name.split(".").pop()?.toLowerCase() ||
-        "jpg";
+        selectedFile.type === "image/png"
+          ? "png"
+          : selectedFile.type === "image/webp"
+          ? "webp"
+          : "jpg";
 
-      const fileName =
-        `${selectedCategory}-${Date.now()}.${extension}`;
+      const uniqueName =
+        `${selectedCategory}-${crypto.randomUUID()}.${extension}`;
 
-      const filePath = `menu/${fileName}`;
+      console.log("UPLOAD BUCKET:", "menu-photos");
+      console.log("UPLOAD FILE:", uniqueName);
+      console.log("UPLOAD TYPE:", selectedFile.type);
+      console.log("UPLOAD SIZE:", selectedFile.size);
 
       const { error: uploadError } =
         await supabase.storage
           .from("menu-photos")
-          .upload(filePath, selectedFile, {
+          .upload(uniqueName, selectedFile, {
             cacheControl: "3600",
-            upsert: false,
+            contentType: selectedFile.type,
+            upsert: true,
           });
 
       if (uploadError) {
-        console.error(uploadError);
-        setMessage(
-          "Gagal upload foto: " + uploadError.message
+        console.error(
+          "SUPABASE UPLOAD ERROR:",
+          uploadError
         );
+
+        setMessage(
+          `Gagal upload foto: ${uploadError.message}`
+        );
+
         setLoading(false);
         return;
       }
 
-      const { data: publicUrlData } =
+      const { data: publicData } =
         supabase.storage
           .from("menu-photos")
-          .getPublicUrl(filePath);
+          .getPublicUrl(uniqueName);
 
-      const publicUrl =
-        publicUrlData.publicUrl;
+      const publicUrl = publicData.publicUrl;
 
-      const { error: updateError } =
+      if (!publicUrl) {
+        setMessage(
+          "Foto berhasil diupload tetapi URL foto tidak ditemukan."
+        );
+
+        setLoading(false);
+        return;
+      }
+
+      console.log("PUBLIC URL:", publicUrl);
+
+      /*
+       * Simpan URL hasil upload ke tabel menu_photos.
+       */
+      const { data: existingMenu, error: findError } =
         await supabase
+          .from("menu_photos")
+          .select("category")
+          .eq("category", selectedCategory)
+          .maybeSingle();
+
+      if (findError) {
+        console.error(
+          "FIND MENU ERROR:",
+          findError
+        );
+
+        setMessage(
+          `Foto berhasil diupload, tetapi gagal membaca data menu: ${findError.message}`
+        );
+
+        setLoading(false);
+        return;
+      }
+
+      let databaseError = null;
+
+      if (existingMenu) {
+        const result = await supabase
           .from("menu_photos")
           .update({
             image_url: publicUrl,
@@ -142,387 +218,206 @@ export default function AdminPage() {
           })
           .eq("category", selectedCategory);
 
-      if (updateError) {
-        console.error(updateError);
-        setMessage(
-          "Foto berhasil diupload tetapi gagal menyimpan database."
+        databaseError = result.error;
+      } else {
+        const result = await supabase
+          .from("menu_photos")
+          .insert({
+            category: selectedCategory,
+            image_url: publicUrl,
+            updated_at: new Date().toISOString(),
+          });
+
+        databaseError = result.error;
+      }
+
+      if (databaseError) {
+        console.error(
+          "DATABASE ERROR:",
+          databaseError
         );
+
+        setMessage(
+          `Foto berhasil diupload, tetapi gagal menyimpan data menu: ${databaseError.message}`
+        );
+
         setLoading(false);
         return;
       }
 
       setImageUrl(publicUrl);
       setSelectedFile(null);
+
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+
       setPreviewUrl("");
 
       setMessage(
         "✅ Foto menu berhasil diupload dan disimpan."
       );
     } catch (error) {
-      console.error(error);
+      console.error("UPLOAD EXCEPTION:", error);
 
-      setMessage(
-        "Terjadi kesalahan saat mengupload foto."
-      );
+      if (error instanceof Error) {
+        setMessage(
+          `Terjadi kesalahan: ${error.message}`
+        );
+      } else {
+        setMessage(
+          "Terjadi kesalahan saat mengupload foto."
+        );
+      }
     }
 
     setLoading(false);
   }
 
-  const currentCategory = categories.find(
-    (category) =>
-      category.key === selectedCategory
-  );
-
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#f4f8f6",
-        padding: "40px 20px",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "1100px",
-          margin: "0 auto",
-        }}
-      >
-        {/* HEADER */}
+    <main className="admin-page">
+      <div className="admin-header">
+        <div>
+          <p className="eyebrow">
+            SPPG KELURAHAN JAMBU
+          </p>
 
-        <div
-          style={{
-            background: "white",
-            borderRadius: "24px",
-            padding: "30px",
-            marginBottom: "25px",
-            boxShadow:
-              "0 8px 30px rgba(0,0,0,0.06)",
-          }}
+          <h1>Admin Menu</h1>
+
+          <p>
+            Upload foto menu langsung dari HP atau komputer.
+          </p>
+        </div>
+
+        <a
+          href="/"
+          className="back-button"
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "20px",
-              flexWrap: "wrap",
-            }}
-          >
+          ← Lihat Halaman Menu
+        </a>
+      </div>
+
+      <section className="admin-panel">
+        <h2>Pilih Kategori</h2>
+
+        <div className="category-buttons">
+          {categories.map((category) => (
+            <button
+              key={category.key}
+              type="button"
+              className={
+                selectedCategory === category.key
+                  ? "category-button active"
+                  : "category-button"
+              }
+              onClick={() => {
+                setSelectedCategory(category.key);
+              }}
+            >
+              <span>{category.icon}</span>
+              {category.title}
+            </button>
+          ))}
+        </div>
+
+        <div className="menu-editor">
+          <div className="editor-title">
+            <span className="editor-icon">
+              {currentCategory?.icon}
+            </span>
+
             <div>
-              <div
-                style={{
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  color: "#009b63",
-                  marginBottom: "8px",
-                }}
-              >
-                SPPG KELURAHAN JAMBU
-              </div>
+              <h2>
+                {currentCategory?.title}
+              </h2>
 
-              <h1
-                style={{
-                  margin: 0,
-                  color: "#123b68",
-                  fontSize: "36px",
-                }}
-              >
-                Admin Menu
-              </h1>
-
-              <p
-                style={{
-                  color: "#667085",
-                  fontSize: "17px",
-                }}
-              >
-                Upload foto menu langsung dari HP atau komputer.
+              <p>
+                Upload foto menu dari HP atau komputer.
               </p>
             </div>
-
-            <a
-              href="/"
-              style={{
-                background: "#123b68",
-                color: "white",
-                padding: "13px 20px",
-                borderRadius: "12px",
-                textDecoration: "none",
-                fontWeight: 700,
-              }}
-            >
-              ← Lihat Menu
-            </a>
-          </div>
-        </div>
-
-        {/* CATEGORY */}
-
-        <div
-          style={{
-            background: "white",
-            borderRadius: "24px",
-            padding: "30px",
-            boxShadow:
-              "0 8px 30px rgba(0,0,0,0.06)",
-          }}
-        >
-          <h2
-            style={{
-              color: "#123b68",
-              marginTop: 0,
-            }}
-          >
-            Pilih Kategori
-          </h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: "15px",
-              marginBottom: "30px",
-            }}
-          >
-            {categories.map((category) => {
-              const active =
-                selectedCategory === category.key;
-
-              return (
-                <button
-                  key={category.key}
-                  type="button"
-                  onClick={() =>
-                    setSelectedCategory(category.key)
-                  }
-                  style={{
-                    padding: "25px 15px",
-                    borderRadius: "18px",
-                    border: active
-                      ? "3px solid #009b63"
-                      : "2px solid #e1ebe6",
-                    background: active
-                      ? "#eaf8f2"
-                      : "white",
-                    cursor: "pointer",
-                    fontSize: "17px",
-                    fontWeight: 700,
-                    color: "#123b68",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "42px",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    {category.icon}
-                  </div>
-
-                  {category.title}
-                </button>
-              );
-            })}
           </div>
 
-          {/* EDITOR */}
+          <label htmlFor="menuPhoto">
+            Pilih Foto Menu
+          </label>
 
-          <div
-            style={{
-              border: "2px solid #e5eee9",
-              borderRadius: "22px",
-              padding: "30px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "15px",
-                marginBottom: "25px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "45px",
-                  background: "#eaf8f2",
-                  padding: "10px 18px",
-                  borderRadius: "18px",
-                }}
-              >
-                {currentCategory?.icon}
-              </div>
+          <input
+            id="menuPhoto"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleFileChange}
+            disabled={loading}
+          />
 
-              <div>
-                <h2
-                  style={{
-                    margin: 0,
-                    color: "#123b68",
-                  }}
-                >
-                  {currentCategory?.title}
-                </h2>
-
-                <p
-                  style={{
-                    margin: "5px 0 0",
-                    color: "#667085",
-                  }}
-                >
-                  Upload foto menu untuk kategori ini.
-                </p>
-              </div>
-            </div>
-
-            {/* FILE UPLOAD */}
-
-            <label
-              htmlFor="menuPhoto"
-              style={{
-                display: "block",
-                fontWeight: 700,
-                color: "#123b68",
-                marginBottom: "10px",
-              }}
-            >
-              📷 Pilih Foto Menu
-            </label>
-
-            <input
-              id="menuPhoto"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handleFileChange}
-              style={{
-                display: "block",
-                width: "100%",
-                padding: "18px",
-                border: "2px dashed #009b63",
-                borderRadius: "16px",
-                background: "#f7fcfa",
-                cursor: "pointer",
-                boxSizing: "border-box",
-              }}
-            />
-
-            <p
-              style={{
-                color: "#667085",
-                fontSize: "14px",
-                marginTop: "10px",
-              }}
-            >
-              JPG, PNG, atau WebP. Maksimal 10 MB.
+          {selectedFile && (
+            <p className="upload-info">
+              File dipilih:{" "}
+              <strong>{selectedFile.name}</strong>
             </p>
+          )}
 
-            {/* PREVIEW */}
-
-            {(previewUrl || imageUrl) && (
-              <div
-                style={{
-                  marginTop: "25px",
-                }}
-              >
-                <p
-                  style={{
-                    fontWeight: 700,
-                    color: "#123b68",
-                  }}
-                >
-                  {previewUrl
-                    ? "Preview Foto Baru"
-                    : "Foto Menu Saat Ini"}
-                </p>
-
-                <div
-                  style={{
-                    borderRadius: "18px",
-                    overflow: "hidden",
-                    border: "1px solid #dfe8e3",
-                    background: "#f5f5f5",
-                  }}
-                >
-                  <img
-                    src={
-                      previewUrl ||
-                      imageUrl
-                    }
-                    alt="Preview menu"
-                    style={{
-                      width: "100%",
-                      maxHeight: "500px",
-                      objectFit: "contain",
-                      display: "block",
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* BUTTON */}
-
-            <div
-              style={{
-                marginTop: "25px",
-              }}
-            >
-              <button
-                type="button"
-                onClick={saveMenu}
-                disabled={
-                  loading || !selectedFile
-                }
-                style={{
-                  width: "100%",
-                  padding: "17px",
-                  border: "none",
-                  borderRadius: "14px",
-                  background:
-                    loading || !selectedFile
-                      ? "#b8c8c1"
-                      : "#009b63",
-                  color: "white",
-                  fontSize: "17px",
-                  fontWeight: 800,
-                  cursor:
-                    loading || !selectedFile
-                      ? "not-allowed"
-                      : "pointer",
-                }}
-              >
-                {loading
-                  ? "⏳ Mengupload..."
-                  : "⬆️ Upload & Simpan Menu"}
-              </button>
+          {previewUrl && (
+            <div className="image-preview">
+              <img
+                src={previewUrl}
+                alt="Preview foto menu"
+              />
             </div>
+          )}
 
-            {/* MESSAGE */}
+          {!previewUrl && imageUrl && (
+            <div className="image-preview">
+              <img
+                src={imageUrl}
+                alt={`Foto ${currentCategory?.title}`}
+              />
+            </div>
+          )}
 
-            {message && (
-              <div
-                style={{
-                  marginTop: "18px",
-                  padding: "15px",
-                  borderRadius: "12px",
-                  background:
-                    message.startsWith("✅")
-                      ? "#eaf8f2"
-                      : "#fff1f0",
-                  color:
-                    message.startsWith("✅")
-                      ? "#087443"
-                      : "#b42318",
-                  fontWeight: 700,
-                }}
-              >
-                {message}
+          {!selectedFile &&
+            !previewUrl &&
+            !imageUrl && (
+              <div className="upload-empty">
+                📷
+                <p>
+                  Belum ada foto menu.
+                </p>
               </div>
             )}
+
+          <p className="upload-info">
+            JPG, PNG, atau WebP • Maksimal 10 MB
+          </p>
+
+          <div className="editor-actions">
+            <button
+              type="button"
+              className="save-button"
+              onClick={saveMenu}
+              disabled={
+                loading || !selectedFile
+              }
+            >
+              {loading
+                ? "⏳ Mengupload..."
+                : "⬆️ Upload & Simpan Menu"}
+            </button>
           </div>
+
+          {message && (
+            <div
+              className={
+                message.startsWith("✅")
+                  ? "save-message success"
+                  : "save-message error"
+              }
+            >
+              {message}
+            </div>
+          )}
         </div>
-      </div>
+      </section>
     </main>
   );
 }
+```
