@@ -12,33 +12,38 @@ const PUBLIC_SITE_URL = "https://menu-qr-sppg.vercel.app";
 export default function CategoryQr({
   categoryPath,
   title,
+  icon,
 }: {
   categoryPath: string;
   title: string;
+  icon: string;
 }) {
   // QR selalu mengarah ke halaman kategori yang tetap.
-  // Foto boleh berubah berkali-kali tanpa mengubah QR yang dicetak.
+  // Foto boleh berubah tanpa mengubah QR yang sudah dicetak.
   const qrUrl = `${PUBLIC_SITE_URL}${categoryPath}`;
 
   return (
-    <div className="qrCard">
+    <article className="categoryQrCard">
+      <div className="categoryIcon" aria-hidden="true">{icon}</div>
+      <h3>{title}</h3>
+      <div className="categoryAccent" aria-hidden="true" />
+      <p className="categoryDescription">Menu terbaru sesuai kelompok sasaran.</p>
       <div className="qrCanvasWrap">
         <QRCodeCanvas
           value={qrUrl}
-          size={190}
+          size={170}
           level="H"
           includeMargin
           imageSettings={{
             src: "/logo-bgn.png",
-            height: 42,
-            width: 42,
+            height: 40,
+            width: 40,
             excavate: true,
             opacity: 1,
           }}
         />
       </div>
-      <h3>{title}</h3>
-      <p>Scan untuk melihat foto menu terbaru</p>
-    </div>
+      <p className="akgText">Sesuai Angka Kecukupan Gizi Harian</p>
+    </article>
   );
 }
