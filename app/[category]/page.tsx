@@ -1,9 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
 
 const categories = {
   "porsi-besar": {
@@ -28,60 +23,81 @@ const categories = {
   },
 } as const;
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
+type Category = (typeof categories)[keyof typeof categories];
 
-export default function CategoryPage() {
-  const params = useParams<{ category: string }>();
-  const slug = params?.category || "";
-  const category = categories[slug as keyof typeof categories];
+type MenuPhotoRow = {
+  image_url: string | null;
+};
 
-  const [imageUrl, setImageUrl] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
+const SUPABASE_URL = "https://zqnpgjmejaetafgahzlw.supabase.co";
 
-  useEffect(() => {
-    if (!category) {
-      setLoading(false);
-      return;
-    }
+async function getMenuPhoto(category: Category) {
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-    let cancelled = false;
+  if (!publishableKey) {
+    console.error("PUBLIC MENU ERROR: Supabase publishable key is missing");
+    return { imageUrl: "", error: "Konfigurasi Supabase belum tersedia." };
+  }
 
-    async function loadMenu() {
-      setLoading(true);
-      setMessage("");
+  const query = new URLSearchParams({
+    select: "image_url",
+    category: `eq.${category.key}`,
+    limit: "1",
+  });
 
-      const { data, error } = await supabase
-        .from("menu_photos")
-        .select("image_url")
-        .eq("category", category.key)
-        .maybeSingle();
-
-      if (cancelled) return;
-
-      if (error) {
-        console.error("PUBLIC MENU ERROR:", error);
-        setImageUrl("");
-        setMessage("Menu belum dapat dimuat.");
-      } else {
-        setImageUrl(data?.image_url || "");
-        if (!data?.image_url) {
-          setMessage("Foto menu untuk kategori ini belum tersedia.");
-        }
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/menu_photos?${query.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          apikey: publishableKey,
+          Authorization: `Bearer ${publishableKey}`,
+          Accept: "application/json",
+        },
+        cache: "no-store",
       }
+    );
 
-      setLoading(false);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        "PUBLIC MENU REST ERROR:",
+        response.status,
+        errorText
+      );
+      return {
+        imageUrl: "",
+        error: `Menu belum dapat dimuat (${response.status}).`,
+      };
     }
 
-    loadMenu();
+    const rows = (await response.json()) as MenuPhotoRow[];
+    const imageUrl = rows[0]?.image_url || "";
 
-    return () => {
-      cancelled = true;
+    return {
+      imageUrl,
+      error: imageUrl ? "" : "Foto menu untuk kategori ini belum tersedia.",
     };
-  }, [slug, category]);
+  } catch (error) {
+    console.error("PUBLIC MENU FETCH ERROR:", error);
+    return {
+      imageUrl: "",
+      error: "Menu belum dapat dimuat.",
+    };
+  }
+}
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export default async function CategoryPage({
+  params,
+}: {
+  params: Promise<{ category: string }>;
+}) {
+  const { category: slug } = await params;
+  const category = categories[slug as keyof typeof categories];
 
   if (!category) {
     return (
@@ -93,6 +109,8 @@ export default function CategoryPage() {
       </main>
     );
   }
+
+  const { imageUrl, error } = await getMenuPhoto(category);
 
   return (
     <main className="home">
@@ -124,16 +142,16 @@ export default function CategoryPage() {
             </div>
           </div>
 
-          {loading && <p>Memuat menu...</p>}
-
-          {!loading && imageUrl && (
+          {imageUrl ? (
             <div className="image-preview">
-              <img src={imageUrl} alt={`Menu ${category.title}`} />
+              <img
+                src={imageUrl}
+                alt={`Menu ${category.title}`}
+                loading="eager"
+              />
             </div>
-          )}
-
-          {!loading && !imageUrl && message && (
-            <p className="save-message">{message}</p>
+          ) : (
+            <p className="save-message">{error}</p>
           )}
 
           <div className="editor-actions">
