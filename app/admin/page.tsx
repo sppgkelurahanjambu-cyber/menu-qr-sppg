@@ -23,32 +23,26 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const currentCategory = categories.find(
-    (category) => category.key === selectedCategory
-  );
+  const currentCategory = categories.find((c) => c.key === selectedCategory);
 
   useEffect(() => {
     async function loadMenu() {
       setMessage("");
       setSelectedFile(null);
       setPreviewUrl("");
-
       const { data, error } = await supabase
         .from("menu_photos")
         .select("image_url")
         .eq("category", selectedCategory)
         .maybeSingle();
-
       if (error) {
-        console.error("LOAD MENU ERROR:", error);
+        console.error(error);
         setImageUrl("");
         setMessage(`Gagal mengambil data menu: ${error.message}`);
         return;
       }
-
       setImageUrl(data?.image_url || "");
     }
-
     loadMenu();
   }, [selectedCategory]);
 
@@ -56,19 +50,16 @@ export default function AdminPage() {
     setMessage("");
     const file = event.target.files?.[0];
     if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setMessage("File harus berupa foto JPG, PNG, atau WebP.");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setMessage("File harus JPG, PNG, atau WebP.");
       event.target.value = "";
       return;
     }
-
     if (file.size > 10 * 1024 * 1024) {
       setMessage("Ukuran foto maksimal 10 MB.");
       event.target.value = "";
       return;
     }
-
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
@@ -84,59 +75,61 @@ export default function AdminPage() {
     setMessage("");
 
     try {
-      const extension =
-        selectedFile.name.split(".").pop()?.toLowerCase() || "jpg";
-      const safeExtension = ["jpg", "jpeg", "png", "webp"].includes(extension)
-        ? extension
-        : "jpg";
-      const uniqueName = `${selectedCategory}-${Date.now()}.${safeExtension}`;
+      const extension = selectedFile.type === "image/png"
+        ? "png"
+        : selectedFile.type === "image/webp"
+          ? "webp"
+          : "jpg";
 
-      const { error: uploadError } = await supabase.storage
+      // Storage path must be a plain relative path inside the bucket.
+      // Do not include the bucket name or a leading slash here.
+      const filePath = `${selectedCategory}-${Date.now()}.${extension}`;
+
+      const upload = await supabase.storage
         .from("menu-photos")
-        .upload(uniqueName, selectedFile, {
+        .upload(filePath, selectedFile, {
           cacheControl: "3600",
           upsert: true,
           contentType: selectedFile.type,
         });
 
-      if (uploadError) {
-        console.error("SUPABASE UPLOAD ERROR:", uploadError);
-        setMessage(`Gagal upload foto: ${uploadError.message}`);
+      if (upload.error) {
+        console.error("STORAGE UPLOAD ERROR", upload.error);
+        setMessage(`Gagal upload foto: ${upload.error.message}`);
         return;
       }
 
-      const { data: publicUrlData } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from("menu-photos")
-        .getPublicUrl(uniqueName);
+        .getPublicUrl(filePath);
 
-      const publicUrl = publicUrlData.publicUrl;
+      if (!urlData?.publicUrl) {
+        setMessage("Upload berhasil, tetapi URL foto tidak ditemukan.");
+        return;
+      }
 
       const { error: updateError } = await supabase
         .from("menu_photos")
         .update({
-          image_url: publicUrl,
+          image_url: urlData.publicUrl,
           updated_at: new Date().toISOString(),
         })
         .eq("category", selectedCategory);
 
       if (updateError) {
-        console.error("UPDATE MENU ERROR:", updateError);
-        setMessage(`Foto terupload, tetapi gagal menyimpan menu: ${updateError.message}`);
+        console.error("MENU UPDATE ERROR", updateError);
+        setMessage(`Foto terupload, tetapi data menu gagal disimpan: ${updateError.message}`);
         return;
       }
 
-      setImageUrl(publicUrl);
+      setImageUrl(urlData.publicUrl);
       setSelectedFile(null);
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl("");
       setMessage("Foto menu berhasil diupload dan disimpan.");
     } catch (error) {
-      console.error("UPLOAD ERROR:", error);
-      setMessage(
-        `Terjadi kesalahan saat mengupload foto: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+      console.error("UPLOAD ERROR", error);
+      setMessage(`Upload gagal: ${error instanceof Error ? error.message : "Kesalahan tidak diketahui"}`);
     } finally {
       setLoading(false);
     }
