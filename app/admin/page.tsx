@@ -10,13 +10,10 @@ const categories = [
   { key: "balita", title: "Balita", icon: "👶" },
 ];
 
-const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseUrl = rawSupabaseUrl
-  .replace(/\/$/, "")
-  .replace(/\/(rest\/v1|storage\/v1|auth\/v1).*$/, "");
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
-
-const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+const supabase = createBrowserClient(
+  "https://zqnpgjmejaetafgahzlw.supabase.co",
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+);
 
 export default function AdminPage() {
   const [selectedCategory, setSelectedCategory] = useState("porsi_besar");
@@ -89,10 +86,10 @@ export default function AdminPage() {
     try {
       const extension =
         selectedFile.name.split(".").pop()?.toLowerCase() || "jpg";
-      const uniqueName = `${selectedCategory}-${Date.now()}.${extension}`;
-
-      console.log("SUPABASE URL:", supabaseUrl);
-      console.log("UPLOAD PATH:", uniqueName);
+      const safeExtension = ["jpg", "jpeg", "png", "webp"].includes(extension)
+        ? extension
+        : "jpg";
+      const uniqueName = `${selectedCategory}-${Date.now()}.${safeExtension}`;
 
       const { error: uploadError } = await supabase.storage
         .from("menu-photos")
