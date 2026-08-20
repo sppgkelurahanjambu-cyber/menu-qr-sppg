@@ -8,8 +8,8 @@
     "start": "next start"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.7.0",
-    "@supabase/supabase-js": "^2.55.0",
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.110.3",
     "next": "^15.5.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
