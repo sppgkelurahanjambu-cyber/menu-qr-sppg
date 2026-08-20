@@ -2,10 +2,34 @@ import Link from "next/link";
 import CategoryQr from "./components/CategoryQr";
 
 const categories = [
-  { key: "porsi_besar", title: "Porsi Besar", description: "Menu untuk penerima manfaat porsi besar", href: "/porsi-besar", icon: "🍽️" },
-  { key: "porsi_kecil", title: "Porsi Kecil", description: "Menu untuk penerima manfaat porsi kecil", href: "/porsi-kecil", icon: "🥣" },
-  { key: "ibu_hamil_menyusui", title: "Ibu Hamil & Menyusui", description: "Menu khusus ibu hamil dan menyusui", href: "/ibu-hamil-menyusui", icon: "🤰" },
-  { key: "balita", title: "Balita", description: "Menu sehat untuk balita", href: "/balita", icon: "👶" },
+  {
+    key: "porsi_besar",
+    title: "Porsi Besar",
+    description: "Menu untuk penerima manfaat porsi besar",
+    href: "/porsi-besar",
+    icon: "🍽️",
+  },
+  {
+    key: "porsi_kecil",
+    title: "Porsi Kecil",
+    description: "Menu untuk penerima manfaat porsi kecil",
+    href: "/porsi-kecil",
+    icon: "🥣",
+  },
+  {
+    key: "ibu_hamil_menyusui",
+    title: "Ibu Hamil & Menyusui",
+    description: "Menu khusus ibu hamil dan menyusui",
+    href: "/ibu-hamil-menyusui",
+    icon: "🤰",
+  },
+  {
+    key: "balita",
+    title: "Balita",
+    description: "Menu sehat untuk balita",
+    href: "/balita",
+    icon: "👶",
+  },
 ];
 
 const SUPABASE_URL = "https://zqnpgjmejaetafgahzlw.supabase.co";
@@ -77,14 +101,31 @@ export default async function HomePage() {
       <div className="container">
         <header className="header">
           <div className="logoBox">
-            <img src="/logo-bgn.png" alt="Logo BGN" className="logo" />
+            <img
+              src="/logo-bgn.png"
+              alt="Logo Badan Gizi Nasional"
+              className="logo"
+            />
           </div>
           <div className="brandText">
             <p className="eyebrow">SPPG SEMARANG JAMBU JAMBU 02</p>
             <h1>Menu Hari Ini</h1>
-            <p className="subtitle">Pilih kategori untuk melihat foto menu terbaru.</p>
+            <p className="subtitle">
+              Pilih kategori untuk melihat menu terbaru.
+            </p>
           </div>
         </header>
+
+        <section className="introPanel" aria-label="Informasi menu">
+          <div>
+            <p className="eyebrow">INFORMASI MENU</p>
+            <h2>Menu terbaru SPPG</h2>
+            <p>
+              Foto menu diperbarui oleh admin. QR setiap kategori tetap sama,
+              sehingga QR yang sudah dicetak dapat digunakan kembali.
+            </p>
+          </div>
+        </section>
 
         <section className="cards" aria-label="Kategori menu">
           {categories.map((category) => (
@@ -93,9 +134,9 @@ export default async function HomePage() {
               <div className="cardContent">
                 <h2>{category.title}</h2>
                 <p>{category.description}</p>
-                {photos[category.key] && (
-                  <span className="photoStatus">● Foto tersedia</span>
-                )}
+                <span className={photos[category.key] ? "photoStatus" : "photoStatus muted"}>
+                  {photos[category.key] ? "● Foto tersedia" : "○ Foto belum tersedia"}
+                </span>
               </div>
               <div className="arrow" aria-hidden="true">→</div>
             </Link>
@@ -106,13 +147,16 @@ export default async function HomePage() {
           <div className="sectionHeading">
             <p className="eyebrow">AKSES CEPAT</p>
             <h2>QR Menu per Kategori</h2>
-            <p>Scan QR untuk langsung membuka foto menu tanpa login.</p>
+            <p>
+              QR ini tetap. Saat admin mengganti foto, QR yang sama otomatis
+              membuka foto terbaru.
+            </p>
           </div>
           <div className="qrGrid">
             {categories.map((category) => (
               <CategoryQr
                 key={category.key}
-                photoUrl={photos[category.key] || ""}
+                categoryPath={category.href}
                 title={category.title}
               />
             ))}
