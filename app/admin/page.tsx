@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "../../lib/supabase/client";
 
 const categories = [
   { key: "porsi_besar", title: "Porsi Besar", icon: "🍽️" },
@@ -90,12 +90,7 @@ export default function AdminPage() {
     setMessage("Mengupload foto...");
 
     try {
-      const extension =
-        selectedFile.type === "image/png"
-          ? "png"
-          : selectedFile.type === "image/webp"
-            ? "webp"
-            : "jpg";
+      const extension = selectedFile.type === "image/png" ? "png" : selectedFile.type === "image/webp" ? "webp" : "jpg";
       const filePath = `${selectedCategory}-${Date.now()}.${extension}`;
 
       const { error: uploadError } = await supabase.storage
@@ -119,10 +114,7 @@ export default function AdminPage() {
 
       const { error: updateError } = await supabase
         .from("menu_photos")
-        .update({
-          image_url: publicUrl,
-          updated_at: new Date().toISOString(),
-        })
+        .update({ image_url: publicUrl, updated_at: new Date().toISOString() })
         .eq("category", selectedCategory);
 
       if (updateError) {
@@ -167,14 +159,8 @@ export default function AdminPage() {
         <h2>Pilih Kategori</h2>
         <div className="category-buttons">
           {categories.map((category) => (
-            <button
-              key={category.key}
-              type="button"
-              className={selectedCategory === category.key ? "category-button active" : "category-button"}
-              onClick={() => setSelectedCategory(category.key)}
-            >
-              <span>{category.icon}</span>
-              {category.title}
+            <button key={category.key} type="button" className={selectedCategory === category.key ? "category-button active" : "category-button"} onClick={() => setSelectedCategory(category.key)}>
+              <span>{category.icon}</span>{category.title}
             </button>
           ))}
         </div>
@@ -182,57 +168,23 @@ export default function AdminPage() {
         <div className="menu-editor">
           <div className="editor-title">
             <span className="editor-icon">{currentCategory?.icon}</span>
-            <div>
-              <h2>{currentCategory?.title}</h2>
-              <p>Upload foto menu baru dari HP.</p>
-            </div>
+            <div><h2>{currentCategory?.title}</h2><p>Upload foto menu baru dari HP.</p></div>
           </div>
 
           <div className="mobile-upload-buttons">
-            <button
-              type="button"
-              className="upload-choice camera"
-              onClick={() => cameraInputRef.current?.click()}
-              disabled={loading}
-            >
-              📷 Ambil Foto dengan Kamera
-            </button>
-            <button
-              type="button"
-              className="upload-choice gallery"
-              onClick={() => galleryInputRef.current?.click()}
-              disabled={loading}
-            >
-              🖼️ Pilih dari Galeri
-            </button>
+            <button type="button" className="upload-choice camera" onClick={() => cameraInputRef.current?.click()} disabled={loading}>📷 Ambil Foto dengan Kamera</button>
+            <button type="button" className="upload-choice gallery" onClick={() => galleryInputRef.current?.click()} disabled={loading}>🖼️ Pilih dari Galeri</button>
           </div>
 
-          <input
-            ref={cameraInputRef}
-            className="hidden-file-input"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            capture="environment"
-            onChange={handleFileChange}
-          />
-          <input
-            ref={galleryInputRef}
-            className="hidden-file-input"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleFileChange}
-          />
+          <input ref={cameraInputRef} className="hidden-file-input" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={handleFileChange} />
+          <input ref={galleryInputRef} className="hidden-file-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} />
 
           {selectedFile && <p className="selected-file">Foto dipilih: <strong>{selectedFile.name}</strong></p>}
 
           {previewUrl ? (
-            <div className="image-preview">
-              <img src={previewUrl} alt="Preview foto menu baru" />
-            </div>
+            <div className="image-preview"><img src={previewUrl} alt="Preview foto menu baru" /></div>
           ) : imageUrl ? (
-            <div className="image-preview">
-              <img src={imageUrl} alt={`Foto ${currentCategory?.title}`} />
-            </div>
+            <div className="image-preview"><img src={imageUrl} alt={`Foto ${currentCategory?.title}`} /></div>
           ) : (
             <div className="empty-photo">Belum ada foto menu untuk kategori ini.</div>
           )}
@@ -240,14 +192,7 @@ export default function AdminPage() {
           <p className="upload-info">JPG, PNG, atau WebP • maksimal 10 MB</p>
 
           <div className="editor-actions">
-            <button
-              type="button"
-              className="save-button"
-              onClick={saveMenu}
-              disabled={loading || !selectedFile}
-            >
-              {loading ? "Mengupload..." : "⬆️ Upload & Simpan Menu"}
-            </button>
+            <button type="button" className="save-button" onClick={saveMenu} disabled={loading || !selectedFile}>{loading ? "Mengupload..." : "⬆️ Upload & Simpan Menu"}</button>
             {message && <span className="save-message">{message}</span>}
           </div>
         </div>
