@@ -1,101 +1,37 @@
-import Link from "next/link";
 import CategoryQr from "./components/CategoryQr";
+import RealTimeDate from "./components/RealTimeDate";
 
 const categories = [
   {
     key: "porsi_besar",
     title: "Porsi Besar",
-    description: "Menu untuk penerima manfaat porsi besar",
     href: "/porsi-besar",
     icon: "🍽️",
   },
   {
     key: "porsi_kecil",
     title: "Porsi Kecil",
-    description: "Menu untuk penerima manfaat porsi kecil",
     href: "/porsi-kecil",
     icon: "🥣",
   },
   {
     key: "ibu_hamil_menyusui",
     title: "Ibu Hamil & Menyusui",
-    description: "Menu khusus ibu hamil dan menyusui",
     href: "/ibu-hamil-menyusui",
     icon: "🤰",
   },
   {
     key: "balita",
     title: "Balita",
-    description: "Menu sehat untuk balita",
     href: "/balita",
     icon: "👶",
   },
 ];
 
-const SUPABASE_URL = "https://zqnpgjmejaetafgahzlw.supabase.co";
-
-type MenuPhotoRow = {
-  category: string;
-  image_url: string | null;
-};
-
-async function loadPhotos() {
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-  if (!publishableKey) {
-    console.error("PUBLIC HOME ERROR: Supabase publishable key is missing");
-    return {} as Record<string, string>;
-  }
-
-  const query = new URLSearchParams({
-    select: "category,image_url",
-    order: "category.asc",
-  });
-
-  try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/menu_photos?${query.toString()}`,
-      {
-        headers: {
-          apikey: publishableKey,
-          Authorization: `Bearer ${publishableKey}`,
-          Accept: "application/json",
-        },
-        cache: "no-store",
-      }
-    );
-
-    if (!response.ok) {
-      console.error(
-        "PUBLIC HOME SUPABASE ERROR:",
-        response.status,
-        await response.text()
-      );
-      return {} as Record<string, string>;
-    }
-
-    const rows = (await response.json()) as MenuPhotoRow[];
-    const photos: Record<string, string> = {};
-
-    for (const row of rows) {
-      if (row.category && row.image_url) {
-        photos[row.category] = row.image_url;
-      }
-    }
-
-    return photos;
-  } catch (error) {
-    console.error("PUBLIC HOME FETCH ERROR:", error);
-    return {} as Record<string, string>;
-  }
-}
-
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function HomePage() {
-  const photos = await loadPhotos();
-
+export default function HomePage() {
   return (
     <main className="home">
       <div className="container">
@@ -110,62 +46,76 @@ export default async function HomePage() {
           <div className="brandText">
             <p className="eyebrow">SPPG SEMARANG JAMBU JAMBU 02</p>
             <h1>Menu Hari Ini</h1>
-            <p className="subtitle">
-              Pilih kategori untuk melihat menu terbaru.
-            </p>
+            <p className="subtitle">Pilih kategori untuk melihat menu terbaru.</p>
+            <div className="addressLine" aria-label="Alamat dapur">
+              <span className="addressIcon" aria-hidden="true">●</span>
+              <span>KRAJAN RT 01 RW 01 DESA KELURHAN KECAMATAN JAMBU KABUPATEN SEMARANG JAWA TENGAH</span>
+            </div>
           </div>
         </header>
 
         <section className="introPanel" aria-label="Informasi menu">
-          <div>
-            <p className="eyebrow">INFORMASI MENU</p>
-            <h2>Menu terbaru SPPG</h2>
-            <p>
-              Foto menu diperbarui oleh admin. QR setiap kategori tetap sama,
-              sehingga QR yang sudah dicetak dapat digunakan kembali.
-            </p>
+          <div className="introInfo">
+            <div className="infoIcon" aria-hidden="true">▦</div>
+            <div>
+              <p className="eyebrow">INFORMASI MENU</p>
+              <h2>Menu terbaru SPPG</h2>
+              <p>
+                Foto menu diperbarui oleh admin. QR setiap kategori tetap sama,
+                sehingga QR yang sudah dicetak dapat digunakan kembali.
+              </p>
+            </div>
           </div>
+          <RealTimeDate />
         </section>
 
-        <section className="cards" aria-label="Kategori menu">
-          {categories.map((category) => (
-            <Link key={category.href} href={category.href} className="card">
-              <div className="icon" aria-hidden="true">{category.icon}</div>
-              <div className="cardContent">
-                <h2>{category.title}</h2>
-                <p>{category.description}</p>
-                <span className={photos[category.key] ? "photoStatus" : "photoStatus muted"}>
-                  {photos[category.key] ? "● Foto tersedia" : "○ Foto belum tersedia"}
-                </span>
-              </div>
-              <div className="arrow" aria-hidden="true">→</div>
-            </Link>
-          ))}
-        </section>
-
-        <section className="qrSection" aria-label="QR Menu per kategori">
-          <div className="sectionHeading">
-            <p className="eyebrow">AKSES CEPAT</p>
-            <h2>QR Menu per Kategori</h2>
-            <p>
-              QR ini tetap. Saat admin mengganti foto, QR yang sama otomatis
-              membuka foto terbaru.
-            </p>
+        <section className="categorySection" aria-label="Kategori menu">
+          <div className="sectionTitle">
+            <h2>Kategori Menu</h2>
+            <span aria-hidden="true" />
           </div>
-          <div className="qrGrid">
+
+          <div className="qrGrid categoryGrid">
             {categories.map((category) => (
               <CategoryQr
                 key={category.key}
                 categoryPath={category.href}
                 title={category.title}
+                icon={category.icon}
               />
             ))}
+          </div>
+
+          <div className="akgBanner">
+            <div className="akgBannerIcon" aria-hidden="true">✚</div>
+            <div>
+              <h3>Sesuai Angka Kecukupan Gizi Harian</h3>
+              <p>
+                Menu yang disajikan disusun berdasarkan kebutuhan gizi harian
+                sesuai standar Angka Kecukupan Gizi (AKG) untuk setiap kelompok sasaran.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="commitment" aria-label="Komitmen SPPG">
+          <div className="commitmentIntro">
+            <div className="commitmentIcon" aria-hidden="true">✓</div>
+            <div>
+              <h3>Komitmen Kami</h3>
+              <p>Menyediakan makanan bergizi seimbang setiap hari untuk mendukung generasi sehat dan cerdas.</p>
+            </div>
+          </div>
+          <div className="commitmentItems">
+            <span>♥ <b>Bergizi</b></span>
+            <span>◈ <b>Aman</b></span>
+            <span>● <b>Berkualitas</b></span>
+            <span>⌁ <b>Sehat</b></span>
           </div>
         </section>
 
         <footer>
-          <p>SPPG SEMARANG JAMBU JAMBU 02</p>
-          <Link href="/admin" className="adminLink">Admin</Link>
+          <p>© {new Date().getFullYear()} SPPG Semarang Jambu Jambu 02. Semua Hak Dilindungi.</p>
         </footer>
       </div>
     </main>
