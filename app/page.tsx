@@ -1,195 +1,73 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
+import Link from "next/link";
 
 const categories = [
   {
-    key: "porsi_besar",
     title: "Porsi Besar",
+    description: "Menu untuk penerima manfaat porsi besar",
+    href: "/porsi-besar",
     icon: "🍽️",
   },
   {
-    key: "porsi_kecil",
     title: "Porsi Kecil",
+    description: "Menu untuk penerima manfaat porsi kecil",
+    href: "/porsi-kecil",
     icon: "🥣",
   },
   {
-    key: "ibu_hamil_menyusui",
     title: "Ibu Hamil & Menyusui",
+    description: "Menu khusus ibu hamil dan menyusui",
+    href: "/ibu-hamil-menyusui",
     icon: "🤰",
   },
   {
-    key: "balita",
     title: "Balita",
+    description: "Menu sehat untuk balita",
+    href: "/balita",
     icon: "👶",
   },
 ];
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
-
-export default function AdminPage() {
-  const [selectedCategory, setSelectedCategory] =
-    useState("porsi_besar");
-
-  const [imageUrl, setImageUrl] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    loadMenu();
-  }, [selectedCategory]);
-
-  async function loadMenu() {
-    setMessage("");
-
-    const { data, error } = await supabase
-      .from("menu_photos")
-      .select("image_url")
-      .eq("category", selectedCategory)
-      .maybeSingle();
-
-    if (error) {
-      console.error(error);
-      setMessage("Gagal mengambil data menu.");
-      return;
-    }
-
-    setImageUrl(data?.image_url || "");
-  }
-
-  async function saveMenu() {
-    setLoading(true);
-    setMessage("");
-
-    const { error } = await supabase
-      .from("menu_photos")
-      .upsert(
-        {
-          category: selectedCategory,
-          image_url: imageUrl || null,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "category",
-        }
-      );
-
-    setLoading(false);
-
-    if (error) {
-      console.error(error);
-      setMessage("Gagal menyimpan menu.");
-      return;
-    }
-
-    setMessage("Menu berhasil disimpan.");
-  }
-
-  const currentCategory = categories.find(
-    (category) => category.key === selectedCategory
-  );
-
+export default function HomePage() {
   return (
-    <main className="admin-page">
-      <div className="admin-header">
-        <div>
-          <p className="eyebrow">SPPG KELURAHAN JAMBU</p>
+    <main className="home">
+      <div className="container">
+        <header className="header">
+          <div className="logoBox">
+            <img
+              src="/logo-bgn.png"
+              alt="Logo Badan Gizi Nasional"
+              className="logo"
+            />
+          </div>
 
-          <h1>Admin Menu</h1>
+          <div>
+            <p className="eyebrow">SPPG Kelurahan Jambu</p>
+            <h1>Menu Hari Ini</h1>
+            <p className="subtitle">
+              Pilih kategori penerima manfaat untuk melihat menu hari ini.
+            </p>
+          </div>
+        </header>
 
-          <p>
-            Kelola foto menu yang tampil pada halaman publik.
-          </p>
-        </div>
-
-        <a href="/" className="back-button">
-          ← Lihat Halaman Menu
-        </a>
-      </div>
-
-      <section className="admin-panel">
-        <h2>Pilih Kategori</h2>
-
-        <div className="category-buttons">
+        <section className="cards">
           {categories.map((category) => (
-            <button
-              key={category.key}
-              type="button"
-              className={
-                selectedCategory === category.key
-                  ? "category-button active"
-                  : "category-button"
-              }
-              onClick={() => setSelectedCategory(category.key)}
-            >
-              <span>{category.icon}</span>
-              {category.title}
-            </button>
+            <Link key={category.href} href={category.href} className="card">
+              <div className="icon">{category.icon}</div>
+              <div className="cardContent">
+                <h2>{category.title}</h2>
+                <p>{category.description}</p>
+              </div>
+              <div className="arrow">→</div>
+            </Link>
           ))}
-        </div>
+        </section>
 
-        <div className="menu-editor">
-          <div className="editor-title">
-            <span className="editor-icon">
-              {currentCategory?.icon}
-            </span>
-
-            <div>
-              <h2>{currentCategory?.title}</h2>
-
-              <p>
-                Atur foto menu untuk kategori ini.
-              </p>
-            </div>
-          </div>
-
-          <label htmlFor="imageUrl">
-            URL Foto Menu
-          </label>
-
-          <input
-            id="imageUrl"
-            type="url"
-            value={imageUrl}
-            onChange={(event) =>
-              setImageUrl(event.target.value)
-            }
-            placeholder="https://contoh.com/foto-menu.jpg"
-          />
-
-          {imageUrl && (
-            <div className="image-preview">
-              <img
-                src={imageUrl}
-                alt={`Foto ${currentCategory?.title}`}
-              />
-            </div>
-          )}
-
-          <div className="editor-actions">
-            <button
-              type="button"
-              className="save-button"
-              onClick={saveMenu}
-              disabled={loading}
-            >
-              {loading
-                ? "Menyimpan..."
-                : "Simpan Menu"}
-            </button>
-
-            {message && (
-              <span className="save-message">
-                {message}
-              </span>
-            )}
-          </div>
-        </div>
-      </section>
+        <footer>
+          <Link href="/admin" className="adminLink">
+            Admin
+          </Link>
+        </footer>
+      </div>
     </main>
   );
 }
