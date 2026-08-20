@@ -49,7 +49,7 @@ export default function HomePage() {
             <p className="subtitle">.</p>
             <div className="addressLine" aria-label="Alamat SPPG">
               <span className="addressIcon" aria-hidden="true">●</span>
-              <span>KRAJAN RT 01 RW 01 DESA KELURHAN KECAMATAN JAMBU KABUPATEN SEMARANG JAWA TENGAH.</span>
+              <span></span>
             </div>
           </div>
         </header>
