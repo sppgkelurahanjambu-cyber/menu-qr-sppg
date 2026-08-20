@@ -10,10 +10,13 @@ const categories = [
   { key: "balita", title: "Balita", icon: "👶" },
 ];
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
+const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseUrl = rawSupabaseUrl
+  .replace(/\/$/, "")
+  .replace(/\/(rest\/v1|storage\/v1|auth\/v1).*$/, "");
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+
+const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
 export default function AdminPage() {
   const [selectedCategory, setSelectedCategory] = useState("porsi_besar");
@@ -42,7 +45,7 @@ export default function AdminPage() {
       if (error) {
         console.error("LOAD MENU ERROR:", error);
         setImageUrl("");
-        setMessage("Gagal mengambil data menu.");
+        setMessage(`Gagal mengambil data menu: ${error.message}`);
         return;
       }
 
@@ -54,7 +57,6 @@ export default function AdminPage() {
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     setMessage("");
-
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -71,7 +73,6 @@ export default function AdminPage() {
     }
 
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
   }
@@ -89,6 +90,9 @@ export default function AdminPage() {
       const extension =
         selectedFile.name.split(".").pop()?.toLowerCase() || "jpg";
       const uniqueName = `${selectedCategory}-${Date.now()}.${extension}`;
+
+      console.log("SUPABASE URL:", supabaseUrl);
+      console.log("UPLOAD PATH:", uniqueName);
 
       const { error: uploadError } = await supabase.storage
         .from("menu-photos")
@@ -120,9 +124,7 @@ export default function AdminPage() {
 
       if (updateError) {
         console.error("UPDATE MENU ERROR:", updateError);
-        setMessage(
-          "Foto berhasil diupload, tetapi gagal menyimpan data menu."
-        );
+        setMessage(`Foto terupload, tetapi gagal menyimpan menu: ${updateError.message}`);
         return;
       }
 
@@ -133,7 +135,11 @@ export default function AdminPage() {
       setMessage("Foto menu berhasil diupload dan disimpan.");
     } catch (error) {
       console.error("UPLOAD ERROR:", error);
-      setMessage("Terjadi kesalahan saat mengupload foto.");
+      setMessage(
+        `Terjadi kesalahan saat mengupload foto: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     } finally {
       setLoading(false);
     }
@@ -147,25 +153,17 @@ export default function AdminPage() {
           <h1>Admin Menu</h1>
           <p>Upload foto menu untuk ditampilkan pada halaman publik.</p>
         </div>
-
-        <a href="/" className="back-button">
-          ← Lihat Halaman Menu
-        </a>
+        <a href="/" className="back-button">← Lihat Halaman Menu</a>
       </div>
 
       <section className="admin-panel">
         <h2>Pilih Kategori</h2>
-
         <div className="category-buttons">
           {categories.map((category) => (
             <button
               key={category.key}
               type="button"
-              className={
-                selectedCategory === category.key
-                  ? "category-button active"
-                  : "category-button"
-              }
+              className={selectedCategory === category.key ? "category-button active" : "category-button"}
               onClick={() => setSelectedCategory(category.key)}
             >
               <span>{category.icon}</span>
@@ -184,7 +182,6 @@ export default function AdminPage() {
           </div>
 
           <label htmlFor="menuPhoto">Foto Menu</label>
-
           <input
             id="menuPhoto"
             type="file"
@@ -200,16 +197,11 @@ export default function AdminPage() {
 
           {!previewUrl && imageUrl && (
             <div className="image-preview">
-              <img
-                src={imageUrl}
-                alt={`Foto ${currentCategory?.title}`}
-              />
+              <img src={imageUrl} alt={`Foto ${currentCategory?.title}`} />
             </div>
           )}
 
-          <p className="upload-info">
-            Format JPG, PNG, atau WebP. Maksimal 10 MB.
-          </p>
+          <p className="upload-info">Format JPG, PNG, atau WebP. Maksimal 10 MB.</p>
 
           <div className="editor-actions">
             <button
@@ -220,7 +212,6 @@ export default function AdminPage() {
             >
               {loading ? "Mengupload..." : "⬆️ Upload & Simpan Menu"}
             </button>
-
             {message && <span className="save-message">{message}</span>}
           </div>
         </div>
