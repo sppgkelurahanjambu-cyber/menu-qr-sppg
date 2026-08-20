@@ -34,9 +34,11 @@ export default function Home() {
 
         <header className="header">
           <div className="logoBox">
-            <div className="logoCircle">
-              BGN
-            </div>
+            <img
+  src="/logo-bgn.png"
+  alt="Logo Badan Gizi Nasional"
+  className="logo"
+/>
           </div>
 
           <div>
