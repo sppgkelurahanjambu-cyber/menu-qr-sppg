@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -32,12 +33,11 @@ const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
 );
 
-export default function CategoryPage({
-  params,
-}: {
-  params: { category: string };
-}) {
-  const category = categories[params.category as keyof typeof categories];
+export default function CategoryPage() {
+  const params = useParams<{ category: string }>();
+  const slug = params?.category || "";
+  const category = categories[slug as keyof typeof categories];
+
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -48,6 +48,8 @@ export default function CategoryPage({
       return;
     }
 
+    let cancelled = false;
+
     async function loadMenu() {
       setLoading(true);
       setMessage("");
@@ -57,6 +59,8 @@ export default function CategoryPage({
         .select("image_url")
         .eq("category", category.key)
         .maybeSingle();
+
+      if (cancelled) return;
 
       if (error) {
         console.error("PUBLIC MENU ERROR:", error);
@@ -73,7 +77,11 @@ export default function CategoryPage({
     }
 
     loadMenu();
-  }, [category]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, category]);
 
   if (!category) {
     return (
