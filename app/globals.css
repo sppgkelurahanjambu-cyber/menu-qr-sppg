@@ -27,7 +27,7 @@ const categories = [
 ];
 
 const supabase = createBrowserClient(
-  process.env.https://zqnpgjmejaetafgahzlw.supabase.co
+  process.env.zqnpgjmejaetafgahzlw.supabase.co/rest/v1/
   process.env.sb_publishable_u18uwF1WOtCI84YtZUt1DA__d6QF-KV
 );
 
@@ -54,6 +54,7 @@ export default function AdminPage() {
 
     if (error) {
       console.error(error);
+      setImageUrl("");
       return;
     }
 
@@ -92,7 +93,9 @@ export default function AdminPage() {
       <div className="admin-header">
         <div>
           <p className="eyebrow">SPPG KELURAHAN JAMBU</p>
+
           <h1>Admin Menu</h1>
+
           <p>
             Kelola foto menu yang tampil pada halaman publik.
           </p>
@@ -110,12 +113,15 @@ export default function AdminPage() {
           {categories.map((category) => (
             <button
               key={category.key}
+              type="button"
               className={
                 selectedCategory === category.key
                   ? "category-button active"
                   : "category-button"
               }
-              onClick={() => setSelectedCategory(category.key)}
+              onClick={() =>
+                setSelectedCategory(category.key)
+              }
             >
               <span>{category.icon}</span>
               {category.title}
@@ -131,7 +137,9 @@ export default function AdminPage() {
 
             <div>
               <h2>{currentCategory?.title}</h2>
-              <p>Atur foto menu untuk kategori ini.</p>
+              <p>
+                Atur foto menu untuk kategori ini.
+              </p>
             </div>
           </div>
 
@@ -143,7 +151,9 @@ export default function AdminPage() {
             id="imageUrl"
             type="url"
             value={imageUrl}
-            onChange={(event) => setImageUrl(event.target.value)}
+            onChange={(event) =>
+              setImageUrl(event.target.value)
+            }
             placeholder="https://contoh.com/foto-menu.jpg"
           />
 
@@ -158,11 +168,14 @@ export default function AdminPage() {
 
           <div className="editor-actions">
             <button
+              type="button"
               className="save-button"
               onClick={saveMenu}
               disabled={loading}
             >
-              {loading ? "Menyimpan..." : "Simpan Menu"}
+              {loading
+                ? "Menyimpan..."
+                : "Simpan Menu"}
             </button>
 
             {message && (
