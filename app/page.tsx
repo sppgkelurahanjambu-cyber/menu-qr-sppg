@@ -1,86 +1,47 @@
-import Link from "next/link";
-
-const categories = [
-  {
-    title: "Porsi Besar",
-    description: "Menu untuk penerima manfaat porsi besar",
-    href: "/porsi-besar",
-    icon: "🍽️",
-  },
-  {
-    title: "Porsi Kecil",
-    description: "Menu untuk penerima manfaat porsi kecil",
-    href: "/porsi-kecil",
-    icon: "🥣",
-  },
-  {
-    title: "Ibu Hamil & Menyusui",
-    description: "Menu khusus ibu hamil dan menyusui",
-    href: "/ibu-hamil-menyusui",
-    icon: "🤰",
-  },
-  {
-    title: "Balita",
-    description: "Menu sehat untuk balita",
-    href: "/balita",
-    icon: "👶",
-  },
-];
-
-export default function Home() {
+export default function AdminPage() {
   return (
-    <main className="home">
-      <div className="container">
+    <main className="admin-page">
+      <div className="admin-header">
+        <div>
+          <p className="eyebrow">SPPG KELURAHAN JAMBU</p>
+          <h1>Admin Menu</h1>
+          <p>Kelola menu makanan yang tampil pada halaman publik.</p>
+        </div>
 
-        <header className="header">
-          <img
-            src="/logo-bgn.png"
-            alt="Logo Badan Gizi Nasional"
-            className="logo"
-          />
-
-          <div>
-            <p className="eyebrow">SPPG KELURAHAN JAMBU</p>
-
-            <h1>Menu Hari Ini</h1>
-
-            <p className="subtitle">
-              Pilih kategori penerima manfaat untuk melihat menu hari ini.
-            </p>
-          </div>
-        </header>
-
-        <section className="cards">
-          {categories.map((category) => (
-            <Link
-              key={category.href}
-              href={category.href}
-              className="card"
-            >
-              <div className="icon">
-                {category.icon}
-              </div>
-
-              <div className="cardContent">
-                <h2>{category.title}</h2>
-
-                <p>{category.description}</p>
-              </div>
-
-              <div className="arrow">
-                →
-              </div>
-            </Link>
-          ))}
-        </section>
-
-        <footer>
-          <Link href="/admin" className="adminLink">
-            Admin
-          </Link>
-        </footer>
-
+        <a href="/" className="back-button">
+          ← Lihat Halaman Menu
+        </a>
       </div>
+
+      <section className="admin-grid">
+        <div className="admin-card">
+          <div className="admin-icon">🍽️</div>
+          <h2>Porsi Besar</h2>
+          <p>Kelola menu untuk penerima manfaat porsi besar.</p>
+          <button>Kelola Menu</button>
+        </div>
+
+        <div className="admin-card">
+          <div className="admin-icon">🥣</div>
+          <h2>Porsi Kecil</h2>
+          <p>Kelola menu untuk penerima manfaat porsi kecil.</p>
+          <button>Kelola Menu</button>
+        </div>
+
+        <div className="admin-card">
+          <div className="admin-icon">🤰</div>
+          <h2>Ibu Hamil & Menyusui</h2>
+          <p>Kelola menu khusus ibu hamil dan menyusui.</p>
+          <button>Kelola Menu</button>
+        </div>
+
+        <div className="admin-card">
+          <div className="admin-icon">👶</div>
+          <h2>Balita</h2>
+          <p>Kelola menu khusus balita.</p>
+          <button>Kelola Menu</button>
+        </div>
+      </section>
     </main>
   );
 }
