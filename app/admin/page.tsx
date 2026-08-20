@@ -127,29 +127,19 @@ export default function AdminPage() {
        * Tidak menggunakan nama asli file.
        * Tidak menggunakan folder.
        */
-      const extension =
-        selectedFile.type === "image/png"
-          ? "png"
-          : selectedFile.type === "image/webp"
-          ? "webp"
-          : "jpg";
-
       const uniqueName =
-        `${selectedCategory}-${crypto.randomUUID()}.${extension}`;
-
-      console.log("UPLOAD BUCKET:", "menu-photos");
+  selectedCategory + "-" + Date.now() + "." + extension;
       console.log("UPLOAD FILE:", uniqueName);
       console.log("UPLOAD TYPE:", selectedFile.type);
       console.log("UPLOAD SIZE:", selectedFile.size);
 
-      const { error: uploadError } =
-        await supabase.storage
-          .from("menu-photos")
-          .upload(uniqueName, selectedFile, {
-            cacheControl: "3600",
-            contentType: selectedFile.type,
-            upsert: true,
-          });
+      const { error: uploadError } = await supabase.storage
+  .from("menu-photos")
+  .upload(uniqueName, selectedFile, {
+    cacheControl: "3600",
+    upsert: true,
+    contentType: selectedFile.type,
+  });
 
       if (uploadError) {
         console.error(
