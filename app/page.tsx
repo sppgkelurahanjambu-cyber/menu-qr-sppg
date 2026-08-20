@@ -46,7 +46,7 @@ export default function HomePage() {
           <div className="brandText">
             <p className="eyebrow">SPPG SEMARANG JAMBU JAMBU 02</p>
             <h1>Menu Hari Ini</h1>
-            <p className="subtitle">Pilih kategori untuk melihat menu terbaru.</p>
+            <p className="subtitle">Krajan RT 01 RW 02, Desa Kelurahan, Kecamatan Jambu, Kabupaten Semarang, Jawa Tengah.</p>
             <div className="addressLine" aria-label="Alamat SPPG">
               <span className="addressIcon" aria-hidden="true">●</span>
               <span>KRAJAN RT 01 RW 01 DESA KELURHAN KECAMATAN JAMBU KABUPATEN SEMARANG JAWA TENGAH</span>
@@ -61,8 +61,7 @@ export default function HomePage() {
               <p className="eyebrow">INFORMASI MENU</p>
               <h2>Menu terbaru SPPG</h2>
               <p>
-                Foto menu diperbarui oleh admin. QR setiap kategori tetap sama,
-                sehingga QR yang sudah dicetak dapat digunakan kembali.
+                Menu sesuai dengan Angka Kecukupan Harian.
               </p>
             </div>
           </div>
