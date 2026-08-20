@@ -1,14 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
 import CategoryQr from "./components/CategoryQr";
-
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
 
 const categories = [
   { key: "porsi_besar", title: "Porsi Besar", description: "Menu untuk penerima manfaat porsi besar", href: "/porsi-besar", icon: "🍽️" },
@@ -17,28 +8,77 @@ const categories = [
   { key: "balita", title: "Balita", description: "Menu sehat untuk balita", href: "/balita", icon: "👶" },
 ];
 
-export default function HomePage() {
-  const [photos, setPhotos] = useState<Record<string, string>>({});
+const SUPABASE_URL = "https://zqnpgjmejaetafgahzlw.supabase.co";
 
-  useEffect(() => {
-    async function loadPhotos() {
-      const { data, error } = await supabase.from("menu_photos").select("category,image_url,updated_at");
-      if (error) {
-        console.error("PUBLIC MENU ERROR:", error);
-        return;
+type MenuPhotoRow = {
+  category: string;
+  image_url: string | null;
+};
+
+async function loadPhotos() {
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!publishableKey) {
+    console.error("PUBLIC HOME ERROR: Supabase publishable key is missing");
+    return {} as Record<string, string>;
+  }
+
+  const query = new URLSearchParams({
+    select: "category,image_url",
+    order: "category.asc",
+  });
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/menu_photos?${query.toString()}`,
+      {
+        headers: {
+          apikey: publishableKey,
+          Authorization: `Bearer ${publishableKey}`,
+          Accept: "application/json",
+        },
+        cache: "no-store",
       }
-      const next: Record<string, string> = {};
-      for (const row of data || []) if (row.image_url) next[row.category] = row.image_url;
-      setPhotos(next);
+    );
+
+    if (!response.ok) {
+      console.error(
+        "PUBLIC HOME SUPABASE ERROR:",
+        response.status,
+        await response.text()
+      );
+      return {} as Record<string, string>;
     }
-    loadPhotos();
-  }, []);
+
+    const rows = (await response.json()) as MenuPhotoRow[];
+    const photos: Record<string, string> = {};
+
+    for (const row of rows) {
+      if (row.category && row.image_url) {
+        photos[row.category] = row.image_url;
+      }
+    }
+
+    return photos;
+  } catch (error) {
+    console.error("PUBLIC HOME FETCH ERROR:", error);
+    return {} as Record<string, string>;
+  }
+}
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export default async function HomePage() {
+  const photos = await loadPhotos();
 
   return (
     <main className="home">
       <div className="container">
         <header className="header">
-          <div className="logoBox"><img src="/logo-bgn.png" alt="Logo BGN" className="logo" /></div>
+          <div className="logoBox">
+            <img src="/logo-bgn.png" alt="Logo BGN" className="logo" />
+          </div>
           <div className="brandText">
             <p className="eyebrow">SPPG SEMARANG JAMBU JAMBU 02</p>
             <h1>Menu Hari Ini</h1>
@@ -53,7 +93,9 @@ export default function HomePage() {
               <div className="cardContent">
                 <h2>{category.title}</h2>
                 <p>{category.description}</p>
-                {photos[category.key] && <span className="photoStatus">● Foto tersedia</span>}
+                {photos[category.key] && (
+                  <span className="photoStatus">● Foto tersedia</span>
+                )}
               </div>
               <div className="arrow" aria-hidden="true">→</div>
             </Link>
@@ -68,7 +110,11 @@ export default function HomePage() {
           </div>
           <div className="qrGrid">
             {categories.map((category) => (
-              <CategoryQr key={category.key} category={category.key} title={category.title} />
+              <CategoryQr
+                key={category.key}
+                category={category.key}
+                title={category.title}
+              />
             ))}
           </div>
         </section>
