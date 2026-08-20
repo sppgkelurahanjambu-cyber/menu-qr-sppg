@@ -112,7 +112,7 @@ export default async function HomePage() {
             {categories.map((category) => (
               <CategoryQr
                 key={category.key}
-                category={category.key}
+                photoUrl={photos[category.key] || ""}
                 title={category.title}
               />
             ))}
