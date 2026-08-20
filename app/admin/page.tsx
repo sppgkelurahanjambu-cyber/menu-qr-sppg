@@ -50,10 +50,11 @@ export default function AdminPage() {
       .from("menu_photos")
       .select("image_url")
       .eq("category", selectedCategory)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error(error);
+      setMessage("Gagal mengambil data menu.");
       return;
     }
 
@@ -66,11 +67,16 @@ export default function AdminPage() {
 
     const { error } = await supabase
       .from("menu_photos")
-      .update({
-        image_url: imageUrl || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("category", selectedCategory);
+      .upsert(
+        {
+          category: selectedCategory,
+          image_url: imageUrl || null,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "category",
+        }
+      );
 
     setLoading(false);
 
@@ -92,7 +98,9 @@ export default function AdminPage() {
       <div className="admin-header">
         <div>
           <p className="eyebrow">SPPG KELURAHAN JAMBU</p>
+
           <h1>Admin Menu</h1>
+
           <p>
             Kelola foto menu yang tampil pada halaman publik.
           </p>
@@ -110,6 +118,7 @@ export default function AdminPage() {
           {categories.map((category) => (
             <button
               key={category.key}
+              type="button"
               className={
                 selectedCategory === category.key
                   ? "category-button active"
@@ -131,7 +140,10 @@ export default function AdminPage() {
 
             <div>
               <h2>{currentCategory?.title}</h2>
-              <p>Atur foto menu untuk kategori ini.</p>
+
+              <p>
+                Atur foto menu untuk kategori ini.
+              </p>
             </div>
           </div>
 
@@ -143,7 +155,9 @@ export default function AdminPage() {
             id="imageUrl"
             type="url"
             value={imageUrl}
-            onChange={(event) => setImageUrl(event.target.value)}
+            onChange={(event) =>
+              setImageUrl(event.target.value)
+            }
             placeholder="https://contoh.com/foto-menu.jpg"
           />
 
@@ -158,11 +172,14 @@ export default function AdminPage() {
 
           <div className="editor-actions">
             <button
+              type="button"
               className="save-button"
               onClick={saveMenu}
               disabled={loading}
             >
-              {loading ? "Menyimpan..." : "Simpan Menu"}
+              {loading
+                ? "Menyimpan..."
+                : "Simpan Menu"}
             </button>
 
             {message && (
