@@ -2,6 +2,7 @@ import fs from "node:fs";
 
 const qrSource = fs.readFileSync("app/components/CategoryQr.tsx", "utf8");
 const homeSource = fs.readFileSync("app/page.tsx", "utf8");
+const clockSource = fs.readFileSync("app/components/RealTimeDate.tsx", "utf8");
 const adminSource = fs.readFileSync("app/admin/page.tsx", "utf8");
 
 // QR must encode the permanent category page, never the current Storage image URL.
@@ -48,6 +49,37 @@ if (!homeSource.includes("categoryPath={category.href}")) {
   );
 }
 
+// Public homepage copy/layout requirements.
+const requiredHomeMarkers = [
+  "KRAJAN RT 01 RW 01 DESA KELURHAN KECAMATAN JAMBU KABUPATEN SEMARANG JAWA TENGAH",
+  "<RealTimeDate />",
+  "Sesuai Angka Kecukupan Gizi Harian",
+];
+
+for (const marker of requiredHomeMarkers) {
+  if (!homeSource.includes(marker)) {
+    throw new Error(`Public page copy check failed: marker tidak ditemukan: ${marker}`);
+  }
+}
+
+if (!clockSource.includes("Asia/Jakarta")) {
+  throw new Error(
+    "Real-time date check failed: RealTimeDate harus menggunakan zona waktu Asia/Jakarta."
+  );
+}
+
+if (!clockSource.includes("setInterval")) {
+  throw new Error(
+    "Real-time date check failed: RealTimeDate harus memperbarui waktu secara berkala."
+  );
+}
+
+if (!qrSource.includes("Sesuai Angka Kecukupan Gizi Harian")) {
+  throw new Error(
+    "Category copy check failed: setiap QR kategori harus menampilkan teks standar AKG harian."
+  );
+}
+
 // Replacement flow must retain the old URL, upload a new file, update the DB,
 // then remove the old Storage object. This prevents stale files from accumulating.
 const requiredAdminMarkers = [
@@ -77,4 +109,4 @@ if (!(uploadIndex < updateIndex && updateIndex < deleteIndex)) {
   );
 }
 
-console.log("QR stability and photo replacement checks passed.");
+console.log("QR stability, public layout, real-time date, AKG copy, and photo replacement checks passed.");
