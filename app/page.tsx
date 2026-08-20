@@ -3,24 +3,28 @@ import CategoryQr from "./components/CategoryQr";
 
 const categories = [
   {
+    key: "porsi_besar",
     title: "Porsi Besar",
     description: "Menu untuk penerima manfaat porsi besar",
     href: "/porsi-besar",
     icon: "🍽️",
   },
   {
+    key: "porsi_kecil",
     title: "Porsi Kecil",
     description: "Menu untuk penerima manfaat porsi kecil",
     href: "/porsi-kecil",
     icon: "🥣",
   },
   {
+    key: "ibu_hamil_menyusui",
     title: "Ibu Hamil & Menyusui",
     description: "Menu khusus ibu hamil dan menyusui",
     href: "/ibu-hamil-menyusui",
     icon: "🤰",
   },
   {
+    key: "balita",
     title: "Balita",
     description: "Menu sehat untuk balita",
     href: "/balita",
@@ -60,12 +64,16 @@ export default function HomePage() {
           <div className="sectionHeading">
             <p className="eyebrow">AKSES CEPAT</p>
             <h2>QR Menu per Kategori</h2>
-            <p>Scan QR untuk langsung membuka menu kategori yang dipilih.</p>
+            <p>Scan QR untuk langsung membuka foto menu tanpa perlu login.</p>
           </div>
 
           <div className="qrGrid">
             {categories.map((category) => (
-              <CategoryQr key={category.href} href={category.href} title={category.title} />
+              <CategoryQr
+                key={category.key}
+                category={category.key}
+                title={category.title}
+              />
             ))}
           </div>
         </section>
