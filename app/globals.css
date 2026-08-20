@@ -1,198 +1,98 @@
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  padding: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background: #f4f8f6;
-  color: #0b2d5c;
-}
-
-a {
-  text-decoration: none;
-}
-
-.home {
+.admin-page {
   min-height: 100vh;
-  padding: 40px 20px;
+  padding: 40px 24px;
+  background: #f4f9f6;
+  color: #082957;
 }
 
-.container {
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-/* HEADER */
-
-.header {
+.admin-header {
+  max-width: 1100px;
+  margin: 0 auto 32px;
   background: white;
-  border-radius: 24px;
-  padding: 28px;
+  border-radius: 28px;
+  padding: 32px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 24px;
-  box-shadow: 0 8px 30px rgba(0, 40, 80, 0.08);
-  margin-bottom: 28px;
-}
-
-.logoBox {
-  flex-shrink: 0;
-}
-
-.logo {
-  width: 110px;
-  height: 110px;
-  object-fit: contain;
-  flex-shrink: 0;
+  box-shadow: 0 10px 30px rgba(0, 50, 80, 0.06);
 }
 
 .eyebrow {
-  margin: 0 0 6px;
-  color: #16834b;
-  font-size: 14px;
+  margin: 0 0 8px;
+  color: #00834a;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-h1 {
+.admin-header h1 {
   margin: 0;
   font-size: 42px;
-  line-height: 1.1;
-  color: #09295c;
 }
 
-.subtitle {
-  margin: 10px 0 0;
-  color: #5f6f80;
-  font-size: 16px;
+.admin-header p {
+  color: #64748b;
 }
 
-/* CARDS */
+.back-button {
+  background: #00834a;
+  color: white;
+  text-decoration: none;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+}
 
-.cards {
+.admin-grid {
+  max-width: 1100px;
+  margin: auto;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
+  gap: 20px;
 }
 
-.card {
-  position: relative;
+.admin-card {
   background: white;
-  border-radius: 20px;
-  padding: 24px;
-  min-height: 170px;
-
-  display: flex;
-  align-items: center;
-  gap: 18px;
-
-  border: 1px solid #e2eae6;
-  box-shadow: 0 5px 20px rgba(0, 40, 80, 0.06);
-
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 8px 24px rgba(0, 50, 80, 0.05);
 }
 
-.card:hover {
-  transform: translateY(-4px);
-  border-color: #16834b;
-  box-shadow: 0 12px 30px rgba(0, 80, 50, 0.13);
+.admin-icon {
+  font-size: 42px;
+  margin-bottom: 16px;
 }
 
-.icon {
-  width: 70px;
-  height: 70px;
-  flex-shrink: 0;
-
-  border-radius: 18px;
-  background: #eaf7ef;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 34px;
-}
-
-.cardContent {
-  flex: 1;
-}
-
-.card h2 {
+.admin-card h2 {
   margin: 0 0 8px;
-  color: #09295c;
-  font-size: 21px;
 }
 
-.card p {
-  margin: 0;
-  color: #718096;
-  font-size: 14px;
-  line-height: 1.5;
+.admin-card p {
+  color: #64748b;
+  min-height: 45px;
 }
 
-.arrow {
-  font-size: 28px;
-  color: #16834b;
-  font-weight: 700;
+.admin-card button {
+  border: 0;
+  background: #00834a;
+  color: white;
+  padding: 11px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-/* FOOTER */
-
-footer {
-  text-align: center;
-  margin-top: 30px;
-}
-
-.adminLink {
-  color: #718096;
-  font-size: 13px;
-}
-
-.adminLink:hover {
-  color: #09295c;
-}
-
-/* MOBILE */
-
-@media (max-width: 650px) {
-  .home {
-    padding: 20px 14px;
+@media (max-width: 700px) {
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .header {
-    padding: 22px;
-    gap: 16px;
-  }
-
-  .logoCircle {
-    width: 72px;
-    height: 72px;
-    font-size: 17px;
-    border-width: 4px;
-  }
-
-  h1 {
-    font-size: 30px;
-  }
-
-  .subtitle {
-    font-size: 14px;
-  }
-
-  .cards {
+  .admin-grid {
     grid-template-columns: 1fr;
   }
 
-  .card {
-    min-height: 135px;
-    padding: 20px;
+  .admin-header h1 {
+    font-size: 32px;
   }
 }
