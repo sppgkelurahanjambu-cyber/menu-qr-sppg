@@ -36,9 +36,7 @@ export default function AdminPage() {
     useState("porsi_besar");
 
   const [imageUrl, setImageUrl] = useState("");
-  const [selectedFile, setSelectedFile] =
-    useState<File | null>(null);
-
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -72,9 +70,7 @@ export default function AdminPage() {
   ) {
     const file = event.target.files?.[0];
 
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     if (!file.type.startsWith("image/")) {
       setMessage("File harus berupa gambar.");
@@ -87,15 +83,13 @@ export default function AdminPage() {
     }
 
     setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
     setMessage("");
-
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
   }
 
   async function saveMenu() {
     if (!selectedFile) {
-      setMessage("Silakan pilih foto menu terlebih dahulu.");
+      setMessage("Silakan pilih foto terlebih dahulu.");
       return;
     }
 
@@ -108,14 +102,13 @@ export default function AdminPage() {
 
       const fileName = `${selectedCategory}-${Date.now()}.${fileExtension}`;
 
-      const filePath = `${selectedCategory}/${fileName}`;
+      const filePath = `menu/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("menu-photos")
         .upload(filePath, selectedFile, {
           cacheControl: "3600",
           upsert: false,
-          contentType: selectedFile.type,
         });
 
       if (uploadError) {
@@ -141,9 +134,7 @@ export default function AdminPage() {
 
       if (updateError) {
         console.error(updateError);
-        setMessage(
-          "Foto berhasil diupload, tetapi gagal menyimpan menu."
-        );
+        setMessage("Foto berhasil diupload, tetapi gagal menyimpan menu.");
         setLoading(false);
         return;
       }
@@ -155,7 +146,7 @@ export default function AdminPage() {
       setMessage("Foto menu berhasil disimpan.");
     } catch (error) {
       console.error(error);
-      setMessage("Terjadi kesalahan saat menyimpan foto.");
+      setMessage("Terjadi kesalahan saat mengupload foto.");
     }
 
     setLoading(false);
@@ -169,15 +160,12 @@ export default function AdminPage() {
     <main className="admin-page">
       <div className="admin-header">
         <div>
-          <p className="eyebrow">
-            SPPG KELURAHAN JAMBU
-          </p>
+          <p className="eyebrow">SPPG KELURAHAN JAMBU</p>
 
           <h1>Admin Menu</h1>
 
           <p>
-            Upload foto menu untuk ditampilkan pada
-            halaman publik.
+            Upload foto menu untuk ditampilkan pada halaman publik.
           </p>
         </div>
 
@@ -217,9 +205,8 @@ export default function AdminPage() {
 
             <div>
               <h2>{currentCategory?.title}</h2>
-
               <p>
-                Upload foto menu untuk kategori ini.
+                Pilih foto menu dari HP atau komputer.
               </p>
             </div>
           </div>
@@ -230,27 +217,32 @@ export default function AdminPage() {
 
           <input
             id="menuPhoto"
-            className="file-input"
             type="file"
-            accept="image/jpeg,image/png,image/webp"
-            capture="environment"
+            accept="image/*"
             onChange={handleFileChange}
           />
 
-          {selectedFile && (
-            <p className="selected-file">
-              Foto dipilih: <strong>{selectedFile.name}</strong>
-            </p>
-          )}
-
-          {(previewUrl || imageUrl) && (
+          {previewUrl && (
             <div className="image-preview">
               <img
-                src={previewUrl || imageUrl}
+                src={previewUrl}
+                alt="Preview foto menu"
+              />
+            </div>
+          )}
+
+          {!previewUrl && imageUrl && (
+            <div className="image-preview">
+              <img
+                src={imageUrl}
                 alt={`Foto ${currentCategory?.title}`}
               />
             </div>
           )}
+
+          <p className="upload-info">
+            Format JPG, PNG, atau WebP. Maksimal 10 MB.
+          </p>
 
           <div className="editor-actions">
             <button
@@ -261,7 +253,7 @@ export default function AdminPage() {
             >
               {loading
                 ? "Mengupload..."
-                : "Simpan Foto Menu"}
+                : "Upload & Simpan Menu"}
             </button>
 
             {message && (
