@@ -6,41 +6,18 @@ html,
 body {
   margin: 0;
   padding: 0;
-}
-
-body {
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
-  background: #f5f8f6;
-  color: #082354;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f8f6;
+  color: #0b2d5c;
 }
 
 a {
-  color: inherit;
   text-decoration: none;
 }
 
-/* =========================
-   MAIN
-========================= */
-
 .home {
   min-height: 100vh;
-  background:
-    radial-gradient(
-      circle at top left,
-      rgba(123, 190, 87, 0.16),
-      transparent 30%
-    ),
-    linear-gradient(
-      180deg,
-      #ffffff 0%,
-      #f5f8f6 100%
-    );
-
-  padding: 35px 20px 25px;
+  padding: 40px 20px;
 }
 
 .container {
@@ -49,343 +26,181 @@ a {
   margin: 0 auto;
 }
 
-/* =========================
-   HEADER
-========================= */
+/* HEADER */
 
 .header {
-  text-align: center;
+  background: white;
+  border-radius: 24px;
+  padding: 28px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  box-shadow: 0 8px 30px rgba(0, 40, 80, 0.08);
+  margin-bottom: 28px;
 }
 
-.logo {
-  width: min(100%, 500px);
-  height: auto;
-  object-fit: contain;
-  margin: 0 auto 15px;
-  display: block;
+.logoBox {
+  flex-shrink: 0;
 }
 
-.brand h1 {
+.logoCircle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #09295c;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+  border: 6px solid #d6b45b;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: #16834b;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+h1 {
   margin: 0;
-  font-size: clamp(30px, 6vw, 52px);
-  line-height: 1;
-  font-weight: 900;
-  letter-spacing: -1.5px;
-  color: #082354;
+  font-size: 42px;
+  line-height: 1.1;
+  color: #09295c;
 }
 
-.brand p {
-  margin: 12px 0 0;
-  font-size: clamp(17px, 3vw, 22px);
-  font-weight: 600;
-  color: #4d6b61;
-}
-
-.divider {
-  width: 80px;
-  height: 5px;
-  margin: 22px auto 18px;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    #76bd45,
-    #c99c3b
-  );
-}
-
-.intro {
-  margin: 0 auto;
-  max-width: 600px;
+.subtitle {
+  margin: 10px 0 0;
+  color: #5f6f80;
   font-size: 16px;
-  line-height: 1.6;
-  color: #66756f;
 }
 
-/* =========================
-   CARDS
-========================= */
+/* CARDS */
 
-.category-grid {
+.cards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 18px;
-  margin-top: 32px;
 }
 
-.category-card {
+.card {
   position: relative;
-  overflow: hidden;
-
-  min-height: 190px;
-  padding: 24px;
-
-  border-radius: 24px;
-
   background: white;
+  border-radius: 20px;
+  padding: 24px;
+  min-height: 170px;
 
-  border: 1px solid rgba(8, 35, 84, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 18px;
 
-  box-shadow:
-    0 8px 30px rgba(8, 35, 84, 0.08);
+  border: 1px solid #e2eae6;
+  box-shadow: 0 5px 20px rgba(0, 40, 80, 0.06);
 
   transition:
     transform 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.category-card:hover {
-  transform: translateY(-5px);
-
-  box-shadow:
-    0 15px 35px rgba(8, 35, 84, 0.14);
+.card:hover {
+  transform: translateY(-4px);
+  border-color: #16834b;
+  box-shadow: 0 12px 30px rgba(0, 80, 50, 0.13);
 }
 
-.category-card:active {
-  transform: scale(0.98);
-}
+.icon {
+  width: 70px;
+  height: 70px;
+  flex-shrink: 0;
 
-/* Decorative circle */
-
-.category-card::after {
-  content: "";
-  position: absolute;
-
-  width: 130px;
-  height: 130px;
-
-  right: -50px;
-  top: -50px;
-
-  border-radius: 50%;
-
-  background: rgba(255, 255, 255, 0.18);
-}
-
-/* =========================
-   ICON
-========================= */
-
-.icon-box {
-  width: 68px;
-  height: 68px;
+  border-radius: 18px;
+  background: #eaf7ef;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  border-radius: 20px;
-
-  margin-bottom: 22px;
+  font-size: 34px;
 }
 
-.icon-box svg {
-  width: 38px;
-  height: 38px;
-
-  fill: none;
-  stroke: currentColor;
-
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.cardContent {
+  flex: 1;
 }
 
-/* =========================
-   CARD COLORS
-========================= */
-
-.category-card.green {
-  background: #e9f6df;
-  color: #27652d;
+.card h2 {
+  margin: 0 0 8px;
+  color: #09295c;
+  font-size: 21px;
 }
 
-.category-card.green .icon-box {
-  background: #76bd45;
-  color: white;
-}
-
-.category-card.blue {
-  background: #e9f1fb;
-  color: #164278;
-}
-
-.category-card.blue .icon-box {
-  background: #28558c;
-  color: white;
-}
-
-.category-card.gold {
-  background: #fff7df;
-  color: #725514;
-}
-
-.category-card.gold .icon-box {
-  background: #c79a38;
-  color: white;
-}
-
-.category-card.navy {
-  background: #e9edf5;
-  color: #082354;
-}
-
-.category-card.navy .icon-box {
-  background: #082354;
-  color: white;
-}
-
-/* =========================
-   CARD CONTENT
-========================= */
-
-.card-content {
-  position: relative;
-  z-index: 2;
-}
-
-.card-content h2 {
+.card p {
   margin: 0;
-
-  font-size: 22px;
-  line-height: 1.2;
-
-  font-weight: 800;
-}
-
-.card-content p {
-  margin: 8px 0 0;
-
+  color: #718096;
   font-size: 14px;
   line-height: 1.5;
-
-  opacity: 0.75;
 }
 
 .arrow {
-  position: absolute;
-
-  right: 22px;
-  bottom: 20px;
-
-  font-size: 27px;
+  font-size: 28px;
+  color: #16834b;
   font-weight: 700;
-
-  opacity: 0.6;
-
-  z-index: 2;
 }
 
-/* =========================
-   FOOTER
-========================= */
+/* FOOTER */
 
-.footer {
+footer {
   text-align: center;
-
-  margin-top: 45px;
-  padding-top: 25px;
-
-  border-top: 1px solid rgba(8, 35, 84, 0.1);
-
-  color: #66756f;
+  margin-top: 30px;
 }
 
-.footer p {
-  margin: 0;
-
-  font-weight: 700;
-  color: #082354;
-}
-
-.footer span {
-  display: block;
-
-  margin-top: 5px;
-
+.adminLink {
+  color: #718096;
   font-size: 13px;
 }
 
-.admin-link {
-  display: inline-block;
-
-  margin-top: 18px;
-
-  font-size: 12px;
-  color: #8a948f;
-
-  opacity: 0.7;
+.adminLink:hover {
+  color: #09295c;
 }
 
-.admin-link:hover {
-  opacity: 1;
-  text-decoration: underline;
-}
+/* MOBILE */
 
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width: 600px) {
-
+@media (max-width: 650px) {
   .home {
-    padding:
-      25px
-      15px
-      20px;
+    padding: 20px 14px;
   }
 
-  .logo {
-    width: 90%;
-    max-width: 430px;
+  .header {
+    padding: 22px;
+    gap: 16px;
   }
 
-  .brand h1 {
-    font-size: 32px;
-  }
-
-  .brand p {
+  .logoCircle {
+    width: 72px;
+    height: 72px;
     font-size: 17px;
+    border-width: 4px;
   }
 
-  .intro {
+  h1 {
+    font-size: 30px;
+  }
+
+  .subtitle {
     font-size: 14px;
   }
 
-  .category-grid {
+  .cards {
     grid-template-columns: 1fr;
-    gap: 14px;
-
-    margin-top: 25px;
   }
 
-  .category-card {
-    min-height: 150px;
-
+  .card {
+    min-height: 135px;
     padding: 20px;
-
-    border-radius: 20px;
   }
-
-  .icon-box {
-    width: 58px;
-    height: 58px;
-
-    margin-bottom: 16px;
-
-    border-radius: 17px;
-  }
-
-  .icon-box svg {
-    width: 32px;
-    height: 32px;
-  }
-
-  .card-content h2 {
-    font-size: 20px;
-  }
-
-  .card-content p {
-    font-size: 13px;
-  }
-
 }
