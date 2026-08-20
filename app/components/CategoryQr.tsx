@@ -1,4 +1,11 @@
-import { QRCodeCanvas } from "qrcode.react";
+"use client";
+
+import dynamic from "next/dynamic";
+
+const QRCodeCanvas = dynamic(
+  () => import("qrcode.react").then((mod) => mod.QRCodeCanvas),
+  { ssr: false }
+);
 
 export default function CategoryQr({
   photoUrl,
