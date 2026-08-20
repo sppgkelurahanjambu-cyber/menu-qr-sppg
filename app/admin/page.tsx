@@ -1,92 +1,178 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { createBrowserClient } from "@supabase/ssr";
 
 const categories = [
-  ["porsi_besar", "Porsi Besar"],
-  ["porsi_kecil", "Porsi Kecil"],
-  ["ibu_hamil_menyusui", "Ibu Hamil & Menyusui"],
-  ["balita", "Balita"]
-] as const;
+  {
+    key: "porsi_besar",
+    title: "Porsi Besar",
+    icon: "🍽️",
+  },
+  {
+    key: "porsi_kecil",
+    title: "Porsi Kecil",
+    icon: "🥣",
+  },
+  {
+    key: "ibu_hamil_menyusui",
+    title: "Ibu Hamil & Menyusui",
+    icon: "🤰",
+  },
+  {
+    key: "balita",
+    title: "Balita",
+    icon: "👶",
+  },
+];
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+);
 
 export default function AdminPage() {
-  const [session, setSession] = useState<any>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [category, setCategory] = useState("porsi_besar");
-  const [file, setFile] = useState<File | null>(null);
-  const [current, setCurrent] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState("porsi_besar");
+
+  const [imageUrl, setImageUrl] = useState("");
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [busy, setBusy] = useState(false);
 
-  async function load() {
-    const { data } = await supabase.auth.getSession();
-    setSession(data.session);
-    const { data: row } = await supabase.from("menu_photos").select("image_url").eq("category", category).single();
-    setCurrent(row?.image_url ?? null);
-  }
+  useEffect(() => {
+    loadMenu();
+  }, [selectedCategory]);
 
-  useEffect(() => { load(); }, [category]);
-
-  async function login(e: React.FormEvent) {
-    e.preventDefault();
+  async function loadMenu() {
     setMessage("");
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setMessage(error.message);
-    else setSession(data.session);
+
+    const { data, error } = await supabase
+      .from("menu_photos")
+      .select("image_url")
+      .eq("category", selectedCategory)
+      .single();
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setImageUrl(data?.image_url || "");
   }
 
-  async function upload() {
-    if (!file || !session) return;
-    setBusy(true); setMessage("");
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${category}/menu.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("menu-photos").upload(path, file, { upsert: true, contentType: file.type });
-    if (uploadError) { setMessage(uploadError.message); setBusy(false); return; }
+  async function saveMenu() {
+    setLoading(true);
+    setMessage("");
 
-    const { data: publicData } = supabase.storage.from("menu-photos").getPublicUrl(path);
-    const url = `${publicData.publicUrl}?v=${Date.now()}`;
-    const { error: dbError } = await supabase.from("menu_photos").update({ image_url: url, updated_at: new Date().toISOString() }).eq("category", category);
-    if (dbError) setMessage(dbError.message);
-    else { setCurrent(url); setFile(null); setMessage("Foto berhasil diperbarui."); }
-    setBusy(false);
+    const { error } = await supabase
+      .from("menu_photos")
+      .update({
+        image_url: imageUrl || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("category", selectedCategory);
+
+    setLoading(false);
+
+    if (error) {
+      console.error(error);
+      setMessage("Gagal menyimpan menu.");
+      return;
+    }
+
+    setMessage("Menu berhasil disimpan.");
   }
 
-  if (!session) return (
-    <main>
-      <h1>Admin Menu</h1>
-      <div className="card">
-        <form onSubmit={login}>
-          <p>Masuk untuk mengunggah foto menu.</p>
-          <input type="email" placeholder="Email admin" value={email} onChange={e => setEmail(e.target.value)} required />
-          <br /><br />
-          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
-          <br /><br />
-          <button type="submit">Masuk</button>
-        </form>
-        {message && <p className="error">{message}</p>}
-      </div>
-    </main>
+  const currentCategory = categories.find(
+    (category) => category.key === selectedCategory
   );
 
   return (
-    <main>
-      <h1>Admin Menu Hari Ini</h1>
-      <div className="card">
-        <label><b>Kategori</b></label>
-        <select value={category} onChange={e => setCategory(e.target.value)} style={{width:"100%", minHeight:48, marginTop:8, borderRadius:12, padding:10}}>
-          {categories.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-        </select>
-        <br /><br />
-        <label><b>Pilih 1 foto</b></label>
-        <input type="file" accept="image/*" capture="environment" onChange={e => setFile(e.target.files?.[0] ?? null)} />
-        <br /><br />
-        <button onClick={upload} disabled={!file || busy}>{busy ? "Mengunggah..." : "Upload Foto"}</button>
-        {message && <p className={message.startsWith("Foto") ? "success" : "error"}>{message}</p>}
+    <main className="admin-page">
+      <div className="admin-header">
+        <div>
+          <p className="eyebrow">SPPG KELURAHAN JAMBU</p>
+          <h1>Admin Menu</h1>
+          <p>
+            Kelola foto menu yang tampil pada halaman publik.
+          </p>
+        </div>
+
+        <a href="/" className="back-button">
+          ← Lihat Halaman Menu
+        </a>
       </div>
-      {current && <div className="card"><h2>Foto aktif</h2><img className="preview" src={current} alt="Foto menu aktif" /></div>}
-      <button className="secondary" onClick={() => supabase.auth.signOut()}>Keluar</button>
+
+      <section className="admin-panel">
+        <h2>Pilih Kategori</h2>
+
+        <div className="category-buttons">
+          {categories.map((category) => (
+            <button
+              key={category.key}
+              className={
+                selectedCategory === category.key
+                  ? "category-button active"
+                  : "category-button"
+              }
+              onClick={() => setSelectedCategory(category.key)}
+            >
+              <span>{category.icon}</span>
+              {category.title}
+            </button>
+          ))}
+        </div>
+
+        <div className="menu-editor">
+          <div className="editor-title">
+            <span className="editor-icon">
+              {currentCategory?.icon}
+            </span>
+
+            <div>
+              <h2>{currentCategory?.title}</h2>
+              <p>Atur foto menu untuk kategori ini.</p>
+            </div>
+          </div>
+
+          <label htmlFor="imageUrl">
+            URL Foto Menu
+          </label>
+
+          <input
+            id="imageUrl"
+            type="url"
+            value={imageUrl}
+            onChange={(event) => setImageUrl(event.target.value)}
+            placeholder="https://contoh.com/foto-menu.jpg"
+          />
+
+          {imageUrl && (
+            <div className="image-preview">
+              <img
+                src={imageUrl}
+                alt={`Foto ${currentCategory?.title}`}
+              />
+            </div>
+          )}
+
+          <div className="editor-actions">
+            <button
+              className="save-button"
+              onClick={saveMenu}
+              disabled={loading}
+            >
+              {loading ? "Menyimpan..." : "Simpan Menu"}
+            </button>
+
+            {message && (
+              <span className="save-message">
+                {message}
+              </span>
+            )}
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
