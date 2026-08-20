@@ -1,17 +1,86 @@
 import Link from "next/link";
 
+const categories = [
+  {
+    title: "Porsi Besar",
+    description: "Menu untuk penerima manfaat porsi besar",
+    href: "/porsi-besar",
+    icon: "🍽️",
+  },
+  {
+    title: "Porsi Kecil",
+    description: "Menu untuk penerima manfaat porsi kecil",
+    href: "/porsi-kecil",
+    icon: "🥣",
+  },
+  {
+    title: "Ibu Hamil & Menyusui",
+    description: "Menu khusus ibu hamil dan menyusui",
+    href: "/ibu-hamil-menyusui",
+    icon: "🤰",
+  },
+  {
+    title: "Balita",
+    description: "Menu sehat untuk balita",
+    href: "/balita",
+    icon: "👶",
+  },
+];
+
 export default function Home() {
   return (
-    <main>
-      <h1>Menu Hari Ini</h1>
-      <p>Silakan pilih jenis porsi.</p>
-      <div className="grid">
-        <Link className="card" href="/porsi-besar"><h2>Porsi Besar</h2><p>Lihat menu hari ini.</p></Link>
-        <Link className="card" href="/porsi-kecil"><h2>Porsi Kecil</h2><p>Lihat menu hari ini.</p></Link>
-        <Link className="card" href="/ibu-hamil-menyusui"><h2>Ibu Hamil & Menyusui</h2><p>Lihat menu hari ini.</p></Link>
-        <Link className="card" href="/balita"><h2>Balita</h2><p>Lihat menu hari ini.</p></Link>
+    <main className="home">
+      <div className="container">
+
+        <header className="header">
+          <img
+            src="/logo-bgn.png"
+            alt="Logo Badan Gizi Nasional"
+            className="logo"
+          />
+
+          <div>
+            <p className="eyebrow">SPPG KELURAHAN JAMBU</p>
+
+            <h1>Menu Hari Ini</h1>
+
+            <p className="subtitle">
+              Pilih kategori penerima manfaat untuk melihat menu hari ini.
+            </p>
+          </div>
+        </header>
+
+        <section className="cards">
+          {categories.map((category) => (
+            <Link
+              key={category.href}
+              href={category.href}
+              className="card"
+            >
+              <div className="icon">
+                {category.icon}
+              </div>
+
+              <div className="cardContent">
+                <h2>{category.title}</h2>
+
+                <p>{category.description}</p>
+              </div>
+
+              <div className="arrow">
+                →
+              </div>
+            </Link>
+          ))}
+        </section>
+
+        <footer>
+          <Link href="/admin" className="adminLink">
+            Admin
+          </Link>
+        </footer>
+
       </div>
-      <p className="small">Admin: <Link href="/admin">buka halaman admin</Link></p>
     </main>
   );
 }
