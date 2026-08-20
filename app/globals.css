@@ -297,3 +297,29 @@ body {
     width: 100%;
   }
 }
+.file-input {
+  width: 100%;
+  padding: 16px;
+  border: 2px dashed #008f5a;
+  border-radius: 14px;
+  background: #f4fbf7;
+  color: #092b5a;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.selected-file {
+  margin-top: 12px;
+  color: #667085;
+}
+
+.file-input::file-selector-button {
+  margin-right: 12px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: #008f5a;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
