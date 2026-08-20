@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createbrowserclient } from "@supabase/ssr";
+import { createBrowserClient } from "@supabase/ssr";
 
 const categories = [
   {
