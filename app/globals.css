@@ -27,8 +27,8 @@ const categories = [
 ];
 
 const supabase = createBrowserClient(
-  process.env.https://zqnpgjmejaetafgahzlw.supabase.co,
-  process.env.sb_publishable_u18uwF1WOtCI84YtZUt1DA__d6QF-KV
+  process.env.https://zqnpgjmejaetafgahzlw.supabase.co!,
+  process.env.sb_publishable_u18uwF1WOtCI84YtZUt1DA__d6QF-KV!
 );
 
 export default function AdminPage() {
