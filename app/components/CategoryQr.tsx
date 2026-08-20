@@ -7,30 +7,24 @@ const QRCodeCanvas = dynamic(
   { ssr: false }
 );
 
+const PUBLIC_SITE_URL = "https://menu-qr-sppg.vercel.app";
+
 export default function CategoryQr({
-  photoUrl,
+  categoryPath,
   title,
 }: {
-  photoUrl: string;
+  categoryPath: string;
   title: string;
 }) {
-  if (!photoUrl) {
-    return (
-      <div className="qrCard">
-        <div className="qrCanvasWrap qrUnavailable">
-          <span>Foto belum tersedia</span>
-        </div>
-        <h3>{title}</h3>
-        <p>Upload foto melalui Admin</p>
-      </div>
-    );
-  }
+  // QR selalu mengarah ke halaman kategori yang tetap.
+  // Foto boleh berubah berkali-kali tanpa mengubah QR yang dicetak.
+  const qrUrl = `${PUBLIC_SITE_URL}${categoryPath}`;
 
   return (
     <div className="qrCard">
       <div className="qrCanvasWrap">
         <QRCodeCanvas
-          value={photoUrl}
+          value={qrUrl}
           size={190}
           level="H"
           includeMargin
@@ -44,7 +38,7 @@ export default function CategoryQr({
         />
       </div>
       <h3>{title}</h3>
-      <p>Scan untuk langsung membuka foto menu</p>
+      <p>Scan untuk melihat foto menu terbaru</p>
     </div>
   );
 }
